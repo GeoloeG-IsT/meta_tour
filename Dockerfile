@@ -18,9 +18,12 @@ RUN ls -la
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Build-time envs for Next.js to inline public vars
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 RUN mkdir -p public
-RUN pwd
-RUN ls -la
 RUN npm run build
 
 # Production runtime image
