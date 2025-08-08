@@ -20,6 +20,8 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN mkdir -p public
+RUN pwd
+RUN ls -la
 RUN npm run build
 
 # Production runtime image
