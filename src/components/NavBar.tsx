@@ -2,9 +2,31 @@
 
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
+import { useEffect, useRef, useState } from 'react'
 
 export default function NavBar() {
   const { user, loading, signOut, profile } = useAuth()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+
+  // Close on outside click or Escape
+  useEffect(() => {
+    if (!menuOpen) return
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [menuOpen])
 
   return (
     <nav className="bg-white shadow-sm border-b sticky top-0 z-40">
@@ -19,18 +41,46 @@ export default function NavBar() {
             {loading ? (
               <div className="animate-pulse bg-gray-200 h-8 w-24 rounded" />
             ) : user ? (
-              <div className="relative">
-                <details className="group">
-                  <summary className="list-none cursor-pointer flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900">
-                    <span>{profile?.full_name || user.email}</span>
-                    <svg className="w-4 h-4 text-gray-500 group-open:rotate-180 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                  </summary>
-                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50">
-                    <Link href="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Dashboard</Link>
-                    <Link href={`/profile/${user.id}`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Profile</Link>
-                    <button onClick={signOut} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Sign Out</button>
-                  </div>
-                </details>
+              <div className="relative" ref={menuRef}>
+                <button
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
+                  onClick={() => setMenuOpen((v) => !v)}
+                  className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900"
+                >
+                  <span>{profile?.full_name || user.email}</span>
+                  <svg className={`w-4 h-4 text-gray-500 transform transition-transform ${menuOpen ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                <div
+                  role="menu"
+                  className={`absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50 origin-top-right transform transition ease-out duration-150 ${
+                    menuOpen ? 'opacity-100 scale-100' : 'pointer-events-none opacity-0 scale-95'
+                  }`}
+                >
+                  <Link
+                    href="/dashboard"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() => setMenuOpen(false)}
+                    role="menuitem"
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    href={`/profile/${user.id}`}
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() => setMenuOpen(false)}
+                    role="menuitem"
+                  >
+                    Profile
+                  </Link>
+                  <button
+                    onClick={() => { setMenuOpen(false); void signOut() }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    role="menuitem"
+                  >
+                    Sign Out
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="flex items-center space-x-4">

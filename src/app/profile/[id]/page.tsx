@@ -24,10 +24,7 @@ export default function PublicProfilePage() {
         setIsLoading(true)
         setError(null)
         const { data, error } = await supabase
-          .from('users')
-          .select('id, full_name, role, created_at')
-          .eq('id', userId)
-          .maybeSingle()
+          .rpc('get_public_profile', { p_user: userId })
         if (error) throw error
         setProfile((data as any) || null)
       } catch (e) {

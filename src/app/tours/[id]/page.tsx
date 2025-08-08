@@ -15,6 +15,7 @@ interface TourImage {
 interface Tour {
   id: string
   organizer_id: string
+  organizer_name?: string | null
   title: string
   description: string | null
   itinerary: any | null
@@ -24,6 +25,8 @@ interface Tour {
   currency: string
   max_participants: number
   status: 'draft' | 'published' | 'archived'
+  country?: string | null
+  difficulty?: 'easy' | 'moderate' | 'challenging' | 'intense' | null
   tour_images?: TourImage[]
 }
 
@@ -52,7 +55,7 @@ export default function TourDetailsPage() {
         const { data, error } = await supabase
           .from('tours')
           .select(
-            `id, organizer_id, title, description, itinerary, start_date, end_date, price, currency, max_participants, status,
+            `id, organizer_id, organizer_name, title, description, itinerary, start_date, end_date, price, currency, max_participants, status, country, difficulty,
              tour_images:tour_images!tour_images_tour_id_fkey ( image_url, alt_text )`
           )
           .eq('id', tourId)
@@ -281,6 +284,23 @@ export default function TourDetailsPage() {
               <Link href="/tours" className="text-sm text-indigo-600 hover:text-indigo-500">&larr; My tours</Link>
             </div>
             <h1 className="text-3xl font-bold text-secondary-900">{tour.title}</h1>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+              {tour.country && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded bg-secondary-100 text-secondary-800">
+                  {tour.country}
+                </span>
+              )}
+              {tour.difficulty && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded bg-secondary-100 text-secondary-800 capitalize">
+                  {tour.difficulty}
+                </span>
+              )}
+              <span className="text-secondary-500">•</span>
+              <span className="text-secondary-600">By</span>
+              <Link href={`/profile/${tour.organizer_id}`} className="text-indigo-600 hover:text-indigo-500">
+                {tour.organizer_name || 'Organizer profile'}
+              </Link>
+            </div>
             <p className="text-secondary-600 mt-2">
               {formatDate(tour.start_date)} – {formatDate(tour.end_date)}
             </p>
