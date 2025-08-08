@@ -2,8 +2,7 @@
 
 # Use Node 18 on Alpine for a small image
 FROM node:22-alpine AS base
-ENV NODE_ENV=production \
-    NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
 
