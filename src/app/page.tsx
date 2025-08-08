@@ -12,6 +12,8 @@ export default function Home() {
   // Tours list with filters
   interface Tour {
     id: string
+    organizer_id?: string
+    organizer_name?: string | null
     title: string
     start_date: string
     end_date: string
@@ -43,6 +45,8 @@ export default function Home() {
           .from('tours')
           .select(`
             id,
+            organizer_id,
+            organizer_name,
             title,
             start_date,
             end_date,
@@ -81,6 +85,8 @@ export default function Home() {
         let items: Tour[] = baseTours.map((t: any) => {
           const computed: Tour = {
             id: t.id,
+            organizer_id: t.organizer_id,
+            organizer_name: t.organizer_name,
             title: t.title,
             start_date: t.start_date,
             end_date: t.end_date,

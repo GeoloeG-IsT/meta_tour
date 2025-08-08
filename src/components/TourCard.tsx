@@ -4,11 +4,15 @@ import Image from 'next/image'
 interface TourCardProps {
   tour: {
     id: string
+    organizer_id?: string
+    organizer_name?: string | null
     title: string
     start_date: string
     end_date: string
     price: number
     currency: string
+    country?: string | null
+    difficulty?: 'easy'|'moderate'|'challenging'|'intense'|null
     tour_images?: {
       image_url: string
       alt_text?: string
@@ -78,6 +82,19 @@ export default function TourCard({ tour, status = 'available', isBooked = false 
           <h3 className="text-xl font-semibold text-secondary-900 mb-2 group-hover:text-primary-600 transition-colors line-clamp-2">
             {tour.title}
           </h3>
+
+          <div className="mb-3 flex items-center gap-2 text-xs">
+            {tour.country && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-secondary-100 text-secondary-800">
+                {tour.country}
+              </span>
+            )}
+            {tour.difficulty && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-secondary-100 text-secondary-800 capitalize">
+                {tour.difficulty}
+              </span>
+            )}
+          </div>
           
           <div className="flex items-center justify-between text-sm text-secondary-600 mb-3">
             <div className="flex items-center">
@@ -89,6 +106,15 @@ export default function TourCard({ tour, status = 'available', isBooked = false 
               </span>
             </div>
           </div>
+
+          {tour.organizer_id && (
+            <div className="mb-3 text-sm">
+              <span className="text-secondary-500 mr-1">Organizer:</span>
+              <Link href={`/profile/${tour.organizer_id}`} className="text-indigo-600 hover:text-indigo-500">
+                {tour.organizer_name || 'View profile'}
+              </Link>
+            </div>
+          )}
           
           <div className="flex items-center justify-between">
             <div className="text-2xl font-bold text-primary-600">
