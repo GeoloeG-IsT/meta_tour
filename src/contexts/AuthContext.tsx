@@ -175,9 +175,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       setLoading(true)
-      await supabase.auth.signOut()
-      // Refresh the page to reflect the signed-out state
-      window.location.reload()
+      // Clear local session first to ensure UI updates
+      await supabase.auth.signOut({ scope: 'local' })
+      try {
+        // Attempt to revoke server session as well (best effort)
+        await supabase.auth.signOut({ scope: 'global' })
+      } catch {}
+      try {
+        // Extra safety: remove any persisted auth tokens
+        Object.keys(localStorage).forEach((k) => {
+          if (k.startsWith('sb-') && k.endsWith('-auth-token')) localStorage.removeItem(k)
+        })
+      } catch {}
+      // Hard redirect to guarantee fresh state
+      if (typeof window !== 'undefined') {
+        window.location.assign('/')
+      }
     } catch (error) {
       console.error('Error signing out:', error)
     } finally {
