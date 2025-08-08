@@ -318,7 +318,7 @@ export default function TourDetailsPage() {
 
               <div className="mt-6">
                 {!user ? (
-                  <button onClick={() => router.push('/login')} className="btn-primary w-full">Sign in to Book</button>
+                  <button onClick={() => router.push(`/login?redirect=${encodeURIComponent(`/tours/${tourId}`)}`)} className="btn-primary w-full">Sign in to Book</button>
                 ) : profile?.role !== 'participant' ? (
                   <button disabled className="btn-secondary w-full">Only participants can book</button>
                 ) : userBookingId ? (

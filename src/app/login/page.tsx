@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, useState, useEffect, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
@@ -17,6 +17,12 @@ function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  const redirectTo = useMemo(() => {
+    const raw = searchParams.get('redirect') || '/'
+    // prevent open redirect: only allow internal paths
+    return raw.startsWith('/') ? raw : '/'
+  }, [searchParams])
+
   useEffect(() => {
     // Check for success message from signup
     const messageParam = searchParams.get('message')
@@ -26,9 +32,9 @@ function LoginContent() {
 
     // Redirect if already logged in
     if (user) {
-      router.push('/dashboard')
+      router.push(redirectTo)
     }
-  }, [user, router, searchParams])
+  }, [user, router, searchParams, redirectTo])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,8 +54,8 @@ function LoginContent() {
       if (error) {
         setError(error.message || 'Invalid email or password')
       } else {
-        // Redirect to dashboard on successful login
-        router.push('/dashboard')
+        // Redirect to intended page or home on successful login
+        router.push(redirectTo)
       }
     } catch (err) {
       setError('An unexpected error occurred')
