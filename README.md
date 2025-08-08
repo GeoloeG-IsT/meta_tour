@@ -103,7 +103,7 @@ For detailed setup instructions, troubleshooting, and configuration options, see
 
 - **Frontend:** Next.js 14, React, TypeScript, Tailwind CSS
 - **Backend:** Supabase (PostgreSQL, Auth, Real-time)
-- **Deployment:** Vercel (recommended)
+- **Deployment:** Vercel (recommended), Google Cloud Run
 - **Payments:** Stripe, PayPal (planned)
 - **Email:** Mailgun/SendGrid (planned)
 
@@ -117,6 +117,91 @@ npm run build        # Build for production
 npm run start        # Start production server
 npm run lint         # Run ESLint
 ```
+
+## ☁️ Deploying to Google Cloud Run (Production)
+
+The app can run containerized on Cloud Run behind HTTPS with autoscaling.
+
+### 1) Prerequisites
+
+- A Google Cloud project (with billing enabled)
+- gcloud CLI installed and authenticated (`gcloud auth login`)
+- Enable required services:
+
+```bash
+gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com
+```
+
+### 2) Configure environment
+
+Create `.env.production` locally with production values:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://<your-supabase-ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
+# If using Stripe later:
+# STRIPE_SECRET_KEY=sk_live_...
+```
+
+Cloud Run uses environment variables set at deploy-time. Keep `.env.production` for local builds only; don’t commit secrets.
+
+### 3) Build the container
+
+This repo includes a production `Dockerfile`.
+
+```bash
+# Set your region and repo
+REGION=europe-west3
+REPO=meta-tour-repo
+IMAGE=meta-tour
+
+# Create an Artifact Registry repo (once)
+gcloud artifacts repositories create $REPO \
+  --repository-format=docker \
+  --location=$REGION \
+  --description="Meta Tour images"
+
+# Configure Docker to use gcloud credential helper
+gcloud auth configure-docker $REGION-docker.pkg.dev
+
+# Build and tag
+docker build -t $REGION-docker.pkg.dev/$(gcloud config get-value project)/$REPO/$IMAGE:latest .
+
+# Push
+docker push $REGION-docker.pkg.dev/$(gcloud config get-value project)/$REPO/$IMAGE:latest
+```
+
+### 4) Deploy to Cloud Run
+
+```bash
+PROJECT_ID=$(gcloud config get-value project)
+REGION=europe-west3
+SERVICE=meta-tour-web
+IMAGE_URI=$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/$IMAGE:latest
+
+gcloud run deploy $SERVICE \
+  --image $IMAGE_URI \
+  --region $REGION \
+  --platform managed \
+  --allow-unauthenticated \
+  --port 8080 \
+  --max-instances 3 \
+  --set-env-vars NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+```
+
+Notes:
+- Cloud Run provides HTTPS. Custom domains can be mapped in Cloud Run → Custom Domains.
+- Increase `--max-instances` for more peak capacity; add `--min-instances` to keep one warm.
+- If you add secrets like Stripe keys, prefer Secret Manager and pass via `--set-secrets`.
+
+### 5) Verify
+
+Open the service URL printed by the deploy command. Login and flows should work against your production Supabase project.
+
+### 6) Optional: Cloud Build automation
+
+You can use Cloud Build triggers on your Git repo to build and deploy on push. Create a trigger that runs the build/push/deploy steps above, or add a `cloudbuild.yaml`.
+
 
 ### Environment Variables
 

@@ -1,0 +1,66 @@
+# Cloud Build pipeline to build, push to Artifact Registry, and deploy to Cloud Run
+
+substitutions:
+  _REGION: europe-west3
+  _REPO: meta-tour-repo
+  _IMAGE: meta-tour
+  _SERVICE: meta-tour-web
+  # Provide these securely via trigger variables or Secrets Manager
+  _NEXT_PUBLIC_SUPABASE_URL: ""
+  _NEXT_PUBLIC_SUPABASE_ANON_KEY: ""
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  # Authenticate Docker to push to Artifact Registry in the specified region
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: auth-docker
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        gcloud auth configure-docker $_REGION-docker.pkg.dev -q
+
+  # Build container image
+  - name: gcr.io/cloud-builders/docker
+    id: build
+    args:
+      - build
+      - -t
+      - '$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_IMAGE:$SHORT_SHA'
+      - .
+
+  # Push image to Artifact Registry
+  - name: gcr.io/cloud-builders/docker
+    id: push
+    args:
+      - push
+      - '$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_IMAGE:$SHORT_SHA'
+
+  # Deploy to Cloud Run
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: deploy
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - '$_SERVICE'
+      - --image
+      - '$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_IMAGE:$SHORT_SHA'
+      - --region
+      - '$_REGION'
+      - --platform
+      - managed
+      - --allow-unauthenticated
+      - --port
+      - '8080'
+      - --max-instances
+      - '3'
+      - --set-env-vars
+      - 'NEXT_PUBLIC_SUPABASE_URL=$_NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY=$_NEXT_PUBLIC_SUPABASE_ANON_KEY'
+
+images:
+  - '$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_IMAGE:$SHORT_SHA'
+
+

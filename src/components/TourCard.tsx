@@ -14,9 +14,11 @@ interface TourCardProps {
       alt_text?: string
     }[]
   }
+  status?: 'available' | 'sold_out'
+  isBooked?: boolean
 }
 
-export default function TourCard({ tour }: TourCardProps) {
+export default function TourCard({ tour, status = 'available', isBooked = false }: TourCardProps) {
   // Get the first image as thumbnail or use a placeholder
   const thumbnailImage = tour.tour_images?.[0]
   const thumbnailUrl = thumbnailImage?.image_url || '/placeholder-tour.jpg'
@@ -44,6 +46,20 @@ export default function TourCard({ tour }: TourCardProps) {
     <Link href={`/tours/${tour.id}`} className="group">
       <div className="card overflow-hidden hover:shadow-lg transition-shadow duration-300">
         <div className="relative h-48 bg-secondary-200">
+          {/* Status badges */}
+          <div className="absolute top-2 left-2 z-10 flex items-center gap-2">
+            <span
+              className={
+                `px-2 py-0.5 rounded text-xs font-medium ` +
+                (status === 'sold_out' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800')
+              }
+            >
+              {status === 'sold_out' ? 'Sold out' : 'Available'}
+            </span>
+            {isBooked && (
+              <span className="px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">Booked</span>
+            )}
+          </div>
           <Image
             src={thumbnailUrl}
             alt={altText}

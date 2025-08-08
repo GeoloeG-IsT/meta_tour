@@ -67,28 +67,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation Header */}
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900">SoulTrip Dashboard</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">
-                Welcome, {profile.full_name || user.email}
-              </span>
-              <button
-                onClick={handleSignOut}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
@@ -186,22 +164,28 @@ export default function DashboardPage() {
                     </>
                   ) : (
                     <>
-                      <div className="bg-purple-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-purple-900">Browse Tours</h4>
-                        <p className="text-sm text-purple-700 mt-1">
-                          Discover amazing spiritual journeys
-                        </p>
-                        <button className="mt-2 text-sm text-purple-600 hover:text-purple-500 font-medium">
-                          Coming soon →
-                        </button>
-                      </div>
                       <div className="bg-blue-50 p-4 rounded-lg">
                         <h4 className="font-medium text-blue-900">My Bookings</h4>
                         <p className="text-sm text-blue-700 mt-1">
                           View your upcoming and past journeys
                         </p>
-                        <button className="mt-2 text-sm text-blue-600 hover:text-blue-500 font-medium">
-                          Coming soon →
+                        <button
+                          onClick={() => router.push('/bookings')}
+                          className="mt-2 text-sm text-blue-600 hover:text-blue-500 font-medium"
+                        >
+                          Open →
+                        </button>
+                      </div>
+                      <div className="bg-teal-50 p-4 rounded-lg">
+                        <h4 className="font-medium text-teal-900">My Tours</h4>
+                        <p className="text-sm text-teal-700 mt-1">
+                          See tours you have booked
+                        </p>
+                        <button
+                          onClick={() => router.push('/tours')}
+                          className="mt-2 text-sm text-teal-600 hover:text-teal-500 font-medium"
+                        >
+                          Open →
                         </button>
                       </div>
                     </>

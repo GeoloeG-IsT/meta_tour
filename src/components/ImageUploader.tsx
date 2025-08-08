@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 
 interface ImageUploaderProps {
@@ -226,11 +227,13 @@ export default function ImageUploader({ tourId, onUploadComplete }: ImageUploade
               const progress = uploadProgress[imagePreview.id] || 0
               return (
                 <div key={imagePreview.id} className="relative group">
-                  <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-200">
-                    <img
+                  <div className="relative w-full overflow-hidden rounded-lg bg-gray-200" style={{ paddingTop: '100%' }}>
+                    <Image
                       src={imagePreview.url}
                       alt={imagePreview.file.name}
-                      className="h-24 w-full object-cover object-center group-hover:opacity-75"
+                      fill
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      className="object-cover object-center group-hover:opacity-75"
                     />
                   </div>
                   

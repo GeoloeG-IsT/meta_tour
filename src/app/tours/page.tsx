@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import TourCard from '@/components/TourCard'
 
@@ -11,111 +12,105 @@ interface Tour {
   end_date: string
   price: number
   currency: string
-  tour_images?: {
-    image_url: string
-    alt_text?: string
-  }[]
+  availability_status?: 'available' | 'sold_out'
+  tour_images?: { image_url: string; alt_text?: string }[]
 }
 
-export default function ToursPage() {
+export default function MyBookedToursPage() {
+  const { user, loading } = useAuth()
   const [tours, setTours] = useState<Tour[]>([])
-  const [loading, setLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function fetchTours() {
-      try {
-        const { data, error } = await supabase
-          .from('tours')
-          .select(`
-            id,
-            title,
-            start_date,
-            end_date,
-            price,
-            currency,
-            tour_images (
-              image_url,
-              alt_text
-            )
-          `)
-          .eq('status', 'published')
-          .order('created_at', { ascending: false })
-
-        if (error) throw error
-
-        setTours(data || [])
-      } catch (err) {
-        console.error('Error fetching tours:', err)
-        setError('Failed to load tours. Please try again later.')
-      } finally {
-        setLoading(false)
-      }
+    if (!loading && user) {
+      void fetchMyTours()
     }
+  }, [loading, user])
 
-    fetchTours()
-  }, [])
+  const fetchMyTours = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      // Join bookings -> tours and compute status client-side combining bookings and availability
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(
+          `tour:tours ( id, title, start_date, end_date, price, currency, availability_status, tour_images:tour_images!tour_images_tour_id_fkey ( image_url, alt_text ) )`
+        )
+        .eq('participant_id', user!.id)
+        .neq('status', 'cancelled')
+        .order('created_at', { ascending: false })
 
-  if (loading) {
+      if (error) throw error
+
+      const toursList = (data as any[])
+        .map((row) => {
+          const t = row.tour
+          if (!t) return null
+          return {
+            id: t.id,
+            title: t.title,
+            start_date: t.start_date,
+            end_date: t.end_date,
+            price: t.price,
+            currency: t.currency,
+            availability_status: t.availability_status,
+            tour_images: t.tour_images,
+          } as Tour
+        })
+        .filter((t): t is Tour => t !== null)
+
+      setTours(toursList)
+    } catch (err) {
+      setError('Failed to load your tours')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (loading || isLoading) {
     return (
-      <div className="min-h-screen py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-secondary-900 mb-8">Discover Amazing Tours</h1>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="card p-6 animate-pulse">
-                <div className="h-48 bg-secondary-300 rounded mb-4"></div>
-                <div className="h-6 bg-secondary-300 rounded mb-2"></div>
-                <div className="h-4 bg-secondary-300 rounded mb-2"></div>
-                <div className="h-4 bg-secondary-300 rounded w-1/2"></div>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div>Loading...</div>
       </div>
     )
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-secondary-900 mb-4">Oops!</h1>
-            <p className="text-secondary-600 mb-8">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="btn-primary"
-            >
-              Try Again
-            </button>
-          </div>
-        </div>
-      </div>
-    )
+  if (!user) {
+    if (typeof window !== 'undefined') {
+      window.location.assign('/login')
+    }
+    return null
   }
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-secondary-900 mb-8">Discover Amazing Tours</h1>
-        
+    <div className="min-h-screen bg-gray-50">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-secondary-900">My Tours</h1>
+          <p className="text-secondary-600">Tours you have booked</p>
+        </div>
+
+        {error && <div className="text-error-700 mb-4">{error}</div>}
+
         {tours.length === 0 ? (
-          <div className="text-center py-12">
-            <h2 className="text-xl font-medium text-secondary-600 mb-4">No tours available</h2>
-            <p className="text-secondary-500">Check back later for new exciting adventures!</p>
-          </div>
+          <div className="text-secondary-700">You have not booked any tours yet.</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {tours.map((tour) => (
               <TourCard
                 key={tour.id}
                 tour={tour}
+                status={tour.availability_status === 'sold_out' ? 'sold_out' : 'available'}
+                isBooked={true}
               />
             ))}
           </div>
         )}
-      </div>
+      </main>
     </div>
   )
 }
+
+
