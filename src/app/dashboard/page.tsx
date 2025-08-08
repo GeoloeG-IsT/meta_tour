@@ -39,19 +39,6 @@ export default function DashboardPage() {
     return null
   }
 
-  const getRoleDisplayName = (role: string) => {
-    switch (role) {
-      case 'organizer':
-        return 'Tour Organizer'
-      case 'participant':
-        return 'Participant'
-      case 'admin':
-        return 'Administrator'
-      default:
-        return 'User'
-    }
-  }
-
   const getRoleDescription = (role: string) => {
     switch (role) {
       case 'organizer':
@@ -94,39 +81,6 @@ export default function DashboardPage() {
                 <p className="mt-2 text-gray-600">
                   {getRoleDescription(profile.role)}
                 </p>
-              </div>
-
-              <div className="mt-8 border-t border-gray-200 pt-8">
-                <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">Full Name</dt>
-                    <dd className="mt-1 text-sm text-gray-900">
-                      {profile.full_name || 'Not provided'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">Email Address</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{user.email}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">Role</dt>
-                    <dd className="mt-1">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                        {getRoleDisplayName(profile.role)}
-                      </span>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">Member Since</dt>
-                    <dd className="mt-1 text-sm text-gray-900">
-                      {new Date(profile.created_at).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </dd>
-                  </div>
-                </dl>
               </div>
 
               {/* Role-specific content */}

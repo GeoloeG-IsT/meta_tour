@@ -66,7 +66,7 @@ export default function NavBar() {
                     Dashboard
                   </Link>
                   <Link
-                    href={`/profile/${user.id}`}
+                    href={`/profile`}
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     onClick={() => setMenuOpen(false)}
                     role="menuitem"
