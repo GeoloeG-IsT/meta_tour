@@ -4,17 +4,9 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import TourCard from '@/components/TourCard'
+import type { TourSummary } from '@/types/tour'
 
-interface Tour {
-  id: string
-  title: string
-  start_date: string
-  end_date: string
-  price: number
-  currency: string
-  availability_status?: 'available' | 'sold_out'
-  tour_images?: { image_url: string; alt_text?: string }[]
-}
+type Tour = TourSummary
 
 export default function MyBookedToursPage() {
   const { user, loading } = useAuth()
@@ -36,7 +28,7 @@ export default function MyBookedToursPage() {
       const { data, error } = await supabase
         .from('bookings')
         .select(
-          `tour:tours ( id, title, start_date, end_date, price, currency, availability_status, tour_images:tour_images!tour_images_tour_id_fkey ( image_url, alt_text ) )`
+          `tour:tours ( id, organizer_id, organizer_name, title, start_date, end_date, price, currency, availability_status, country, difficulty, tour_images:tour_images!tour_images_tour_id_fkey ( image_url, alt_text ) )`
         )
         .eq('participant_id', user!.id)
         .neq('status', 'cancelled')
@@ -50,12 +42,16 @@ export default function MyBookedToursPage() {
           if (!t) return null
           return {
             id: t.id,
+            organizer_id: t.organizer_id,
+            organizer_name: t.organizer_name,
             title: t.title,
             start_date: t.start_date,
             end_date: t.end_date,
             price: t.price,
             currency: t.currency,
             availability_status: t.availability_status,
+            country: t.country,
+            difficulty: t.difficulty,
             tour_images: t.tour_images,
           } as Tour
         })

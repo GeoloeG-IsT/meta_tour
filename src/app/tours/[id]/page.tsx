@@ -6,29 +6,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import type { TourDetail } from '@/types/tour'
 
-interface TourImage {
-  image_url: string
-  alt_text?: string | null
-}
-
-interface Tour {
-  id: string
-  organizer_id: string
-  organizer_name?: string | null
-  title: string
-  description: string | null
-  itinerary: any | null
-  start_date: string
-  end_date: string
-  price: number
-  currency: string
-  max_participants: number
-  status: 'draft' | 'published' | 'archived'
-  country?: string | null
-  difficulty?: 'easy' | 'moderate' | 'challenging' | 'intense' | null
-  tour_images?: TourImage[]
-}
+type Tour = TourDetail
 
 export default function TourDetailsPage() {
   const params = useParams<{ id: string }>()

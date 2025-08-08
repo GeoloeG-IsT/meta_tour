@@ -1,29 +1,16 @@
 'use client'
 
-import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import TourCard from '@/components/TourCard'
+import type { TourSummary } from '@/types/tour'
 
 export default function Home() {
-  const { user, loading, signOut } = useAuth()
+  const { user } = useAuth()
   
   // Tours list with filters
-  interface Tour {
-    id: string
-    organizer_id?: string
-    organizer_name?: string | null
-    title: string
-    start_date: string
-    end_date: string
-    price: number
-    currency: string
-    country?: string | null
-    difficulty?: 'easy'|'moderate'|'challenging'|'intense'|null
-    availability_status?: 'available' | 'sold_out'
-    tour_images?: { image_url: string; alt_text?: string }[]
-  }
+  type Tour = TourSummary
 
   const [tours, setTours] = useState<Tour[]>([])
   const [toursLoading, setToursLoading] = useState(true)

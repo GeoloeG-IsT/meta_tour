@@ -1,23 +1,9 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import type { TourSummary } from '@/types/tour'
 
 interface TourCardProps {
-  tour: {
-    id: string
-    organizer_id?: string
-    organizer_name?: string | null
-    title: string
-    start_date: string
-    end_date: string
-    price: number
-    currency: string
-    country?: string | null
-    difficulty?: 'easy'|'moderate'|'challenging'|'intense'|null
-    tour_images?: {
-      image_url: string
-      alt_text?: string
-    }[]
-  }
+  tour: TourSummary
   status?: 'available' | 'sold_out'
   isBooked?: boolean
 }
