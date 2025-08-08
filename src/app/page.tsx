@@ -17,6 +17,8 @@ export default function Home() {
     end_date: string
     price: number
     currency: string
+    country?: string | null
+    difficulty?: 'easy'|'moderate'|'challenging'|'intense'|null
     availability_status?: 'available' | 'sold_out'
     tour_images?: { image_url: string; alt_text?: string }[]
   }
@@ -27,6 +29,8 @@ export default function Home() {
   const [query, setQuery] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [country, setCountry] = useState('')
+  const [difficulty, setDifficulty] = useState('')
   const [bookedIds, setBookedIds] = useState<string[]>([])
 
 
@@ -44,6 +48,8 @@ export default function Home() {
             end_date,
             price,
             currency,
+            country,
+            difficulty,
             availability_status,
             tour_images:tour_images!tour_images_tour_id_fkey (
               image_url,
@@ -80,6 +86,8 @@ export default function Home() {
             end_date: t.end_date,
             price: t.price,
             currency: t.currency,
+            country: t.country,
+            difficulty: t.difficulty,
             availability_status: t.availability_status,
             tour_images: t.tour_images,
           }
@@ -95,6 +103,13 @@ export default function Home() {
         if (endDate) {
           items = items.filter((t) => new Date(t.end_date) <= new Date(endDate))
         }
+        if (country.trim()) {
+          const c = country.toLowerCase()
+          items = items.filter((t) => (t.country || '').toLowerCase().includes(c))
+        }
+        if (difficulty) {
+          items = items.filter((t) => (t.difficulty || '') === difficulty)
+        }
         setTours(items)
       } catch (err) {
         setToursError('Failed to load tours. Please try again later.')
@@ -104,7 +119,7 @@ export default function Home() {
     }
     fetchTours()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, startDate, endDate, user])
+  }, [query, startDate, endDate, country, difficulty, user])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -114,7 +129,7 @@ export default function Home() {
         {/* Filters + Tours grid */}
         <div className="w-full max-w-7xl mx-auto">
           <div className="card p-4 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <div>
                 <label className="form-label">Search</label>
                 <input className="form-input" placeholder="Search by title" value={query} onChange={(e) => setQuery(e.target.value)} />
@@ -127,8 +142,22 @@ export default function Home() {
                 <label className="form-label">End Before</label>
                 <input type="date" className="form-input" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
               </div>
+                <div>
+                  <label className="form-label">Country</label>
+                  <input className="form-input" placeholder="e.g., Nepal" value={country} onChange={(e) => setCountry(e.target.value)} />
+                </div>
+                <div>
+                  <label className="form-label">Difficulty</label>
+                  <select className="form-input" value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
+                    <option value="">Any</option>
+                    <option value="easy">Easy</option>
+                    <option value="moderate">Moderate</option>
+                    <option value="challenging">Challenging</option>
+                    <option value="intense">Intense</option>
+                  </select>
+                </div>
               <div className="flex items-end">
-                <button className="btn-secondary w-full" onClick={() => { setQuery(''); setStartDate(''); setEndDate(''); }}>Clear Filters</button>
+                <button className="btn-secondary w-full" onClick={() => { setQuery(''); setStartDate(''); setEndDate(''); setCountry(''); setDifficulty(''); }}>Clear Filters</button>
           </div>
         </div>
           </div>

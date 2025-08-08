@@ -18,6 +18,8 @@ export default function EditTourPage() {
   const [price, setPrice] = useState<number | ''>('')
   const [currency, setCurrency] = useState('USD')
   const [maxParticipants, setMaxParticipants] = useState<number | ''>('')
+  const [country, setCountry] = useState('')
+  const [difficulty, setDifficulty] = useState<'easy'|'moderate'|'challenging'|'intense'|''>('')
   const [status, setStatus] = useState<TourStatus>('draft')
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -52,7 +54,7 @@ export default function EditTourPage() {
     try {
       const { data, error } = await supabase
         .from('tours')
-        .select('organizer_id, title, description, start_date, end_date, price, currency, max_participants, status')
+        .select('organizer_id, title, description, start_date, end_date, price, currency, max_participants, country, difficulty, status')
         .eq('id', tourId)
         .single()
 
@@ -71,6 +73,8 @@ export default function EditTourPage() {
       setPrice(data.price)
       setCurrency(data.currency)
       setMaxParticipants(data.max_participants)
+      setCountry(data.country || '')
+      setDifficulty((data.difficulty as any) || '')
       setStatus(data.status)
     } catch (err) {
       setError('Failed to load tour')
@@ -131,6 +135,8 @@ export default function EditTourPage() {
           price: Number(price),
           currency,
           max_participants: Number(maxParticipants),
+          country: country || null,
+          difficulty: difficulty || null,
           status,
         })
         .eq('id', tourId)
@@ -221,6 +227,23 @@ export default function EditTourPage() {
               <option value="draft">Draft</option>
               <option value="published">Published</option>
               <option value="archived">Archived</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="form-label">Country</label>
+            <input className="form-input" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="e.g., Nepal" />
+          </div>
+          <div>
+            <label className="form-label">Difficulty</label>
+            <select className="form-input" value={difficulty} onChange={(e) => setDifficulty(e.target.value as any)}>
+              <option value="">Select difficulty</option>
+              <option value="easy">Easy</option>
+              <option value="moderate">Moderate</option>
+              <option value="challenging">Challenging</option>
+              <option value="intense">Intense</option>
             </select>
           </div>
         </div>
