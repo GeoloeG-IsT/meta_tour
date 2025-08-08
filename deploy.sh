@@ -1,4 +1,6 @@
 PROJECT_ID=$(gcloud config get-value project)
+REPO=meta-tour-repo
+IMAGE=meta-tour
 REGION=europe-west3
 SERVICE=meta-tour-web
 IMAGE_URI=$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/$IMAGE:latest
