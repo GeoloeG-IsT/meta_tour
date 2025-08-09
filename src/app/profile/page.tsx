@@ -5,10 +5,14 @@ import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useI18n } from '@/contexts/I18nContext'
+import { supportedLocales, type Locale } from '@/i18n/config'
+import { t } from '@/i18n'
 
 export default function MyProfilePage() {
   const { user, loading, profile, reloadProfile } = useAuth()
   const { theme, setTheme } = useTheme()
+  const { locale, setLocale } = useI18n()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [bio, setBio] = useState('')
@@ -39,8 +43,16 @@ export default function MyProfilePage() {
     setError(null)
     try {
       setSaving(true)
+      const safetyTimer = setTimeout(() => {
+        // Safety fallback in case network hangs
+        setSaving(false)
+        setMessage('Profile update submitted. It may take a moment to reflect.')
+      }, 10000)
       // Update users table (full_name, bio)
-      const { error: upErr } = await supabase.from('users').update({ full_name: fullName, bio }).eq('id', user.id)
+      const { error: upErr } = await supabase
+        .from('users')
+        .update({ full_name: fullName, bio, language: locale })
+        .eq('id', user.id)
       if (upErr) throw upErr
       // Update auth email if changed
       if (email && email !== user.email) {
@@ -48,7 +60,8 @@ export default function MyProfilePage() {
         if (authErr) throw authErr
       }
       await reloadProfile()
-      setMessage('Profile updated')
+      setMessage(t(locale, 'profile_updated'))
+      clearTimeout(safetyTimer)
     } catch (e: any) {
       setError(e?.message || 'Failed to save')
     } finally {
@@ -74,7 +87,7 @@ export default function MyProfilePage() {
       if (pwErr) throw pwErr
       setNewPassword('')
       setConfirmPassword('')
-      setMessage('Password updated')
+      setMessage(t(locale, 'profile_password_updated'))
     } catch (e: any) {
       setError(e?.message || 'Failed to update password')
     } finally {
@@ -85,7 +98,7 @@ export default function MyProfilePage() {
   return (
     <div className="min-h-screen bg-white dark:bg-secondary-900">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-2xl font-bold text-secondary-900 dark:text-secondary-100 mb-6">My Profile</h1>
+        <h1 className="text-2xl font-bold text-secondary-900 dark:text-secondary-100 mb-6">{t(locale, 'profile_title')}</h1>
 
         {message && <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-200 px-4 py-3 rounded mb-4">{message}</div>}
         {error && <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-4">{error}</div>}
@@ -94,16 +107,16 @@ export default function MyProfilePage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-start">
           <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="form-label">Full Name</label>
+              <label className="form-label">{t(locale, 'profile_full_name')}</label>
               <input className="form-input" value={fullName} onChange={(e) => setFullName(e.target.value)} />
             </div>
             <div>
-              <label className="form-label">Email</label>
+              <label className="form-label">{t(locale, 'profile_email')}</label>
               <input type="email" className="form-input" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
           </div>
           <div className="sm:col-span-1">
-            <label className="form-label">Avatar</label>
+            <label className="form-label">{t(locale, 'profile_avatar')}</label>
             <div className="flex items-center gap-4">
               <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gray-200">
                 {profile?.avatar_url ? (
@@ -138,19 +151,19 @@ export default function MyProfilePage() {
                     }
                   }}
                 />
-                {uploading ? 'Uploading…' : 'Upload'}
+                {uploading ? 'Uploading…' : t(locale, 'profile_upload')}
               </label>
             </div>
           </div>
         </div>
 
         <div>
-          <label className="form-label">Bio</label>
+          <label className="form-label">{t(locale, 'profile_bio')}</label>
           <textarea className="form-input min-h-[120px]" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell others about yourself" />
         </div>
 
         <div>
-          <label className="form-label">Theme</label>
+          <label className="form-label">{t(locale, 'profile_theme')}</label>
           <div className="grid grid-cols-3 gap-2 max-w-md">
             {(['light','dark','system'] as const).map((mode) => (
               <button
@@ -159,29 +172,45 @@ export default function MyProfilePage() {
                 onClick={() => setTheme(mode)}
                 className={`px-3 py-2 rounded border text-sm ${theme === mode ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-secondary-800 dark:text-secondary-100 border-secondary-200'}`}
               >
-                {mode.replace(/^./, (c) => c.toUpperCase())}
+                {mode === 'light' ? t(locale, 'theme_light') : mode === 'dark' ? t(locale, 'theme_dark') : t(locale, 'theme_system')}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="form-label">{t(locale, 'profile_language')}</label>
+          <div className="grid grid-cols-4 gap-2 max-w-xl">
+            {supportedLocales.map((l) => (
+              <button
+                type="button"
+                key={l}
+                onClick={() => setLocale(l as Locale)}
+                className={`px-3 py-2 rounded border text-sm ${locale === l ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-secondary-800 dark:text-secondary-100 border-secondary-200'}`}
+              >
+                {l.toUpperCase()}
               </button>
             ))}
           </div>
         </div>
 
         <div className="flex justify-end gap-3">
-          <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</button>
+          <button type="submit" className="btn-primary" disabled={saving}>{saving ? t(locale, 'common_saving') : t(locale, 'profile_save_changes')}</button>
         </div>
         </form>
 
         <div className="mt-10 card p-6">
-          <h2 className="text-xl font-semibold text-secondary-900 dark:text-secondary-100 mb-4">Change Password</h2>
+        <h2 className="text-xl font-semibold text-secondary-900 dark:text-secondary-100 mb-4">{t(locale, 'profile_change_password')}</h2>
           <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
           <div>
-            <label className="form-label">New Password</label>
+            <label className="form-label">{t(locale, 'profile_new_password')}</label>
             <input type="password" className="form-input" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
           </div>
           <div>
-            <label className="form-label">Confirm New Password</label>
+            <label className="form-label">{t(locale, 'profile_confirm_new_password')}</label>
             <input type="password" className="form-input" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
           </div>
-          <button type="submit" className="btn-secondary" disabled={changingPassword}>{changingPassword ? 'Updating...' : 'Update Password'}</button>
+          <button type="submit" className="btn-secondary" disabled={changingPassword}>{changingPassword ? t(locale, 'common_updating') : t(locale, 'profile_update_password')}</button>
           </form>
         </div>
       </div>

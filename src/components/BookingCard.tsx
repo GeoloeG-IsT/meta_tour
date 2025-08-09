@@ -1,4 +1,7 @@
 import Link from 'next/link'
+import { useI18n } from '@/contexts/I18nContext'
+import { t } from '@/i18n'
+import { formatShortDate } from '@/lib/format'
 
 export interface BookingCardProps {
   booking: {
@@ -10,19 +13,15 @@ export interface BookingCardProps {
   }
 }
 
-function formatDate(dateString: string): string {
-  const date = new Date(dateString)
-  return date.toLocaleDateString()
-}
-
 export default function BookingCard({ booking }: BookingCardProps) {
+  const { locale } = useI18n()
   return (
     <div className="card p-4">
       <div className="flex items-center justify-between">
         <div>
           <div className="font-medium text-secondary-900">{booking.tour.title}</div>
           <div className="text-sm text-secondary-600">
-            {formatDate(booking.tour.start_date)} – {formatDate(booking.tour.end_date)}
+            {formatShortDate(booking.tour.start_date, locale)} – {formatShortDate(booking.tour.end_date, locale)}
           </div>
           <div className="mt-1 text-sm">
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary-200 text-secondary-800 mr-2">
@@ -35,10 +34,10 @@ export default function BookingCard({ booking }: BookingCardProps) {
         </div>
         <div className="flex items-center gap-3">
           <Link href={`/bookings/${booking.id}`} className="text-indigo-600 hover:text-indigo-500 text-sm">
-            View Booking
+            {t(locale, 'common_view_booking')}
           </Link>
           <Link href={`/tours/${booking.tour.id}`} className="text-secondary-700 hover:text-secondary-900 text-sm">
-            View Tour
+            {t(locale, 'common_view_tour')}
           </Link>
         </div>
       </div>

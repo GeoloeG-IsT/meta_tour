@@ -6,11 +6,14 @@ import { supabase } from '@/lib/supabase'
 import TourFiltersBar from '@/components/filters/TourFiltersBar'
 import { fetchPublishedTours } from '@/data/tours'
 import { SORT_OPTIONS } from '@/constants/tours'
+import { useI18n } from '@/contexts/I18nContext'
+import { t } from '@/i18n'
 import TourCard from '@/components/TourCard'
 import type { TourSummary } from '@/types/tour'
 
 export default function Home() {
   const { user } = useAuth()
+  const { locale } = useI18n()
   
   // Tours list with filters
   type Tour = TourSummary
@@ -184,7 +187,7 @@ export default function Home() {
           ) : toursError ? (
             <div className="text-center text-secondary-600">{toursError}</div>
           ) : tours.length === 0 ? (
-            <div className="text-center text-secondary-600">No tours available</div>
+            <div className="text-center text-secondary-600">{t(locale, 'home_no_tours')}</div>
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
