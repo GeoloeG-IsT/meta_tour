@@ -3,6 +3,8 @@
 import { useAuth } from '@/contexts/AuthContext'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import TourFiltersBar from '@/components/filters/TourFiltersBar'
+import { fetchPublishedTours } from '@/data/tours'
 import TourCard from '@/components/TourCard'
 import type { TourSummary } from '@/types/tour'
 
@@ -44,35 +46,11 @@ export default function Home() {
     void loadBooked()
   }, [user])
 
-  const buildQuery = () => {
-    let qb = supabase
-      .from('tours')
-      .select(`
-        id,
-        organizer_id,
-        organizer_name,
-        title,
-        start_date,
-        end_date,
-        price,
-        currency,
-        country,
-        difficulty,
-        availability_status,
-        tour_images:tour_images!tour_images_tour_id_fkey (
-          image_url,
-          alt_text
-        )
-      `)
-      .eq('status', 'published')
-      .order('created_at', { ascending: false })
-
-    if (startDate) qb = qb.gte('start_date', startDate)
-    if (endDate) qb = qb.lte('end_date', endDate)
-    if (countries.length > 0) qb = qb.in('country', countries.map((c) => c.toLowerCase()))
-    if (difficulty) qb = qb.eq('difficulty', difficulty)
-    return qb
-  }
+  // Repository-backed fetch builder
+  const buildQuery = () => fetchPublishedTours(
+    { startDate, endDate, countries, difficulty },
+    undefined // range applied later
+  )
 
   const loadPage = async (reset: boolean) => {
     try {
@@ -94,7 +72,7 @@ export default function Home() {
         pagination: { from, to, perPage, prevOffset: offset },
       })
       const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now()
-      const { data, error } = await buildQuery().range(from, to)
+      const { data, error } = await fetchPublishedTours({ startDate, endDate, countries, difficulty }, { from, to })
       const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now()
       console.log('[Tours] Fetch end', {
         when: new Date().toISOString(),
@@ -165,133 +143,37 @@ export default function Home() {
       <main className="min-h-screen px-4 sm:px-6 lg:px-8 py-8">
         {/* Filters + Tours grid */}
         <div className="w-full max-w-7xl mx-auto">
-          <div className="card p-4 mb-6 sticky top-16 z-30">
-            {/* Top row: Search + Per Page + Filters toggle */}
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
-              <div className="flex-1">
-                <input
-                  className="form-input rounded-full"
-                  placeholder="Search tours with a prompt..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void runInference() } }}
-                  aria-label="Search"
-                />
-              </div>
-              <div>
-                <button
-                  className="btn-primary"
-                  disabled={isInferring || !query.trim()}
-                  onClick={() => void runInference()}
-                >
-                  {isInferring ? 'Analyzing…' : 'Search'}
-                </button>
-              </div>
-              <div className="md:ml-auto">
-                <button
-                  className="btn-secondary p-2 h-10 w-10 flex items-center justify-center"
-                  onClick={() => setFiltersOpen((v) => !v)}
-                  aria-expanded={filtersOpen}
-                  aria-controls="filters-panel"
-                  aria-label="Toggle filters"
-                  title={filtersOpen ? 'Hide filters' : 'Show filters'}
-                >
-                  {filtersOpen ? (
-                    // Chevron up
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-                      <path fillRule="evenodd" d="M11.47 7.72a.75.75 0 0 1 1.06 0l6 6a.75.75 0 1 1-1.06 1.06L12 9.31l-5.47 5.47a.75.75 0 0 1-1.06-1.06l6-6z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    // Chevron down
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-                      <path fillRule="evenodd" d="M12.53 16.28a.75.75 0 0 1-1.06 0l-6-6a.75.75 0 1 1 1.06-1.06L12 14.69l5.47-5.47a.75.75 0 0 1 1.06 1.06l-6 6z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Dropdown filters */}
-            {filtersOpen && (
-              <div id="filters-panel" className="mt-4 border-t pt-4 grid grid-cols-1 md:grid-cols-6 gap-4">
-                <div>
-                  <label className="form-label">Per Page</label>
-                  <select className="form-input" value={perPage} onChange={(e) => setPerPage(Number(e.target.value))} aria-label="Per page">
-                    <option value={6}>6</option>
-                    <option value={9}>9</option>
-                    <option value={12}>12</option>
-                    <option value={18}>18</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="form-label">Start After</label>
-                  <input type="date" className="form-input" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-                </div>
-                <div>
-                  <label className="form-label">End Before</label>
-                  <input type="date" className="form-input" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-                </div>
-                <div>
-                  <label className="form-label">Countries</label>
-                  {countries.length === 0 ? (
-                    <div className="text-sm text-secondary-600">Use the search prompt to infer countries (e.g., &quot;in Asia&quot;)</div>
-                  ) : (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {countries.map((c) => (
-                        <span key={c} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                          {c}
-                          <button
-                            className="ml-1 text-gray-500 hover:text-gray-700"
-                            onClick={() => setCountries((prev) => prev.filter((x) => x !== c))}
-                            aria-label={`Remove ${c}`}
-                          >
-                            ×
-                          </button>
-                  </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label className="form-label">Difficulty</label>
-                  <select className="form-input" value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
-                    <option value="">Any</option>
-                    <option value="easy">Easy</option>
-                    <option value="moderate">Moderate</option>
-                    <option value="challenging">Challenging</option>
-                    <option value="intense">Intense</option>
-                  </select>
-                </div>
-                <div className="flex items-end justify-end">
-                  <button
-                    className="btn-secondary"
-                    onClick={() => {
-                      setQuery('');
-                      setStartDate('');
-                      setEndDate('');
-                      setCountries([]);
-                      setDifficulty('');
-                      setPerPage(9);
-                    }}
-                  >
-                    Clear Filters
-                  </button>
-                </div>
-              </div>
-            )}
-        </div>
+          <TourFiltersBar
+            value={{ query, filters: { startDate, endDate, countries, difficulty, perPage } }}
+            onChange={(next) => {
+              if (next.query !== undefined) setQuery(next.query)
+              if (next.filters) {
+                if (next.filters.startDate !== undefined) setStartDate(next.filters.startDate)
+                if (next.filters.endDate !== undefined) setEndDate(next.filters.endDate)
+                if (next.filters.countries !== undefined) setCountries(next.filters.countries)
+                if (next.filters.difficulty !== undefined) setDifficulty(next.filters.difficulty)
+                if (next.filters.perPage !== undefined) setPerPage(next.filters.perPage)
+              }
+            }}
+            onSearch={() => runInference()}
+            isSearching={isInferring}
+            onClear={() => { setQuery(''); setStartDate(''); setEndDate(''); setCountries([]); setDifficulty(''); setPerPage(9); }}
+          />
 
           {toursLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="card p-6 animate-pulse">
-                  <div className="h-48 bg-secondary-300 rounded mb-4"></div>
-                  <div className="h-6 bg-secondary-300 rounded mb-2"></div>
-                  <div className="h-4 bg-secondary-300 rounded mb-2"></div>
-                  <div className="h-4 bg-secondary-300 rounded w-1/2"></div>
-          </div>
+                <div key={i}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <div className="card p-6 animate-pulse">
+                    <div className="h-48 bg-secondary-300 rounded mb-4"></div>
+                    <div className="h-6 bg-secondary-300 rounded mb-2"></div>
+                    <div className="h-4 bg-secondary-300 rounded mb-2"></div>
+                    <div className="h-4 bg-secondary-300 rounded w-1/2"></div>
+                  </div>
+                </div>
               ))}
-          </div>
+            </div>
           ) : toursError ? (
             <div className="text-center text-secondary-600">{toursError}</div>
           ) : tours.length === 0 ? (
