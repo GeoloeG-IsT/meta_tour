@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useI18n } from '@/contexts/I18nContext'
+import { t } from '@/i18n'
 import { supportedLocales, type Locale } from '@/i18n/config'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
@@ -36,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
-  const { setLocale } = useI18n()
+  const { locale, setLocale } = useI18n()
 
   useEffect(() => {
     debug('AuthContext: useEffect triggered')
@@ -134,13 +135,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Handle network errors or configuration issues
       if (error instanceof Error) {
         if (error.message.includes('fetch')) {
-          return { error: { message: 'Unable to connect to the server. Please check your internet connection and try again.' } }
+          return { error: { message: t(locale, 'auth_unable_connect') } }
         }
         if (error.message.includes('Supabase')) {
-          return { error: { message: 'Configuration error. Please contact support.' } }
+          return { error: { message: t(locale, 'auth_configuration_error') } }
         }
       }
-      return { error: { message: 'An unexpected error occurred. Please try again.' } }
+      return { error: { message: t(locale, 'auth_unexpected_error') } }
     } finally {
       setLoading(false)
     }
@@ -159,10 +160,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Handle specific error cases with user-friendly messages
         if (error.message === 'Email not confirmed') {
-          return { error: { message: 'Please check your email and click the confirmation link before signing in.' } }
+          return { error: { message: t(locale, 'auth_email_not_confirmed') } }
         }
         if (error.message === 'Invalid login credentials') {
-          return { error: { message: 'Invalid email or password. Please check your credentials and try again.' } }
+          return { error: { message: t(locale, 'auth_invalid_credentials') } }
         }
       }
       
@@ -172,13 +173,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Handle network errors or configuration issues
       if (error instanceof Error) {
         if (error.message.includes('fetch')) {
-          return { error: { message: 'Unable to connect to the server. Please check your internet connection and try again.' } }
+          return { error: { message: t(locale, 'auth_unable_connect') } }
         }
         if (error.message.includes('Supabase')) {
-          return { error: { message: 'Configuration error. Please contact support.' } }
+          return { error: { message: t(locale, 'auth_configuration_error') } }
         }
       }
-      return { error: { message: 'An unexpected error occurred. Please try again.' } }
+      return { error: { message: t(locale, 'auth_unexpected_error') } }
     } finally {
       setLoading(false)
     }
