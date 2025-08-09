@@ -45,10 +45,21 @@ npm install
    - Go to your Supabase dashboard → SQL Editor
    - Copy and run the contents of `supabase/migrations/0001_initial_schema.sql`
 
-4. **Configure authentication:**
-   - In Supabase dashboard → Authentication → Settings
-   - Add `http://localhost:3000` as Site URL
-   - Add `http://localhost:3000/dashboard` as Redirect URL
+4. **Configure authentication (Supabase Auth URLs):**
+   - In Supabase Dashboard → Authentication → URL Configuration
+   - Site URL (set both environments you use, update when you add a custom domain):
+     - Local: `http://localhost:3000`
+     - Production (Cloud Run): `https://meta-tour-web-<PROJECT_NUMBER>.<REGION>.run.app`
+   - Additional Redirect URLs (add all that the app can redirect to):
+     - `http://localhost:3000/`
+     - `http://localhost:3000/login`
+     - `http://localhost:3000/auth/confirm`
+     - `https://meta-tour-web-<PROJECT_NUMBER>.<REGION>.run.app/`
+     - `https://meta-tour-web-<PROJECT_NUMBER>.<REGION>.run.app/login`
+     - `https://meta-tour-web-<PROJECT_NUMBER>.<REGION>.run.app/auth/confirm`
+   - Notes:
+     - Email/password login is a direct session exchange (no redirects), but email change links, magic links and OAuth use the Redirect URLs.
+     - Replace placeholders with your actual Cloud Run service URL (or custom domain) and region.
 
 5. **Start the development server:**
 
@@ -145,6 +156,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
 
 Cloud Run uses environment variables set at deploy-time. Keep `.env.production` for local builds only; don’t commit secrets.
 
+Also set build-time variables in your CI/CD (Cloud Build) so Next.js can inline public values at build time.
+
 ### 3) Build the container
 
 This repo includes a production `Dockerfile`.
@@ -164,8 +177,11 @@ gcloud artifacts repositories create $REPO \
 # Configure Docker to use gcloud credential helper
 gcloud auth configure-docker $REGION-docker.pkg.dev
 
-# Build and tag
-docker build -t $REGION-docker.pkg.dev/$(gcloud config get-value project)/$REPO/$IMAGE:latest .
+# Build and tag (pass public envs as build-args so Next.js can inline them)
+docker build \
+  --build-arg NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
+  --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY \
+  -t $REGION-docker.pkg.dev/$(gcloud config get-value project)/$REPO/$IMAGE:latest .
 
 # Push
 docker push $REGION-docker.pkg.dev/$(gcloud config get-value project)/$REPO/$IMAGE:latest
@@ -200,7 +216,56 @@ Open the service URL printed by the deploy command. Login and flows should work 
 
 ### 6) Optional: Cloud Build automation
 
-You can use Cloud Build triggers on your Git repo to build and deploy on push. Create a trigger that runs the build/push/deploy steps above, or add a `cloudbuild.yaml`.
+You can use Cloud Build triggers on your Git repo to build and deploy on push. This repo includes `cloudbuild.yaml` which:
+
+- Builds the Docker image (passing public envs as build-args)
+- Pushes to Artifact Registry
+- Deploys to Cloud Run with runtime envs
+
+In the Cloud Build trigger, set substitutions for:
+
+- `_NEXT_PUBLIC_SUPABASE_URL=https://<your-ref>.supabase.co`
+- `_NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>`
+
+Adjust `_REGION`, `_REPO`, `_IMAGE`, `_SERVICE` as needed.
+
+## 🔐 Authentication Behavior
+
+- Sign-in redirect memory: the login page honors a `redirect` query param (e.g. `/login?redirect=/tours/<id>`). On successful sign-in, users are returned there; otherwise they go to `/`.
+- The app automatically appends the current path when clicking “Sign In” from the header.
+- Robust sign-out: the app clears the local session and then attempts a server revoke. If sign-out seems stuck in production, check:
+  - Network tab for a call to `.../auth/v1/logout`
+  - That `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set in Cloud Run (runtime) and passed at build-time
+  - Supabase Auth URL configuration matches your Cloud Run/custom domain URL(s)
+
+## 🧪 Seeding Sample Data
+
+You can seed organizers and tours for demo/testing.
+
+Requirements:
+
+- Service Role key (Supabase Dashboard → Project Settings → API)
+- Node 18+
+
+Command:
+
+```bash
+SUPABASE_URL=https://<your-ref>.supabase.co \
+SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key> \
+node scripts/seed.js
+```
+
+What it does:
+
+- Creates 10 confirmed organizer users
+- For each organizer, creates 5 published tours
+- Tour fields include: country (one of india, costa rica, berlin, ukraine, france), difficulty (easy, moderate, challenging, intense), itinerary, images
+- Downloads a representative country image and uploads it to the `tour-images` bucket, inserting a matching `tour_images` row
+
+Important:
+
+- Never expose the Service Role key in client-side code or public repos
+- Ensure the `tour-images` storage bucket is public (the app expects public images)
 
 
 ### Environment Variables
