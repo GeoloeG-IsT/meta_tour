@@ -7,6 +7,7 @@ import ParticipantsList from '@/components/participants/ParticipantsList'
 import { formatDisplayDate, formatPrice } from '@/lib/format'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { fetchTourParticipants } from '@/data/tours'
 import { useAuth } from '@/contexts/AuthContext'
 import type { TourDetail } from '@/types/tour'
 
@@ -91,11 +92,7 @@ export default function TourDetailsPage() {
         if (user && user.id === (data as any).organizer_id) {
           try {
             setParticipantsLoading(true)
-            const { data: rows, error: partErr } = await supabase
-              .from('bookings')
-              .select(`participant:users!bookings_participant_id_fkey ( id, full_name, avatar_url )`)
-              .eq('tour_id', tourId)
-              .neq('status', 'cancelled')
+            const { data: rows, error: partErr } = await fetchTourParticipants(tourId)
             if (partErr) throw partErr
             const unique: Record<string, { id: string; full_name: string | null; avatar_url: string | null }> = {}
             ;(rows as any[] | null)?.forEach((r) => {
