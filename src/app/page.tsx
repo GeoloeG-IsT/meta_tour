@@ -26,6 +26,7 @@ export default function Home() {
   const [hasMore, setHasMore] = useState(true)
   const [bookedIds, setBookedIds] = useState<string[]>([])
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [isInferring, setIsInferring] = useState(false)
 
   // Load booked ids once per user
   useEffect(() => {
@@ -66,7 +67,6 @@ export default function Home() {
       .eq('status', 'published')
       .order('created_at', { ascending: false })
 
-    if (query.trim()) qb = qb.ilike('title', `%${query}%`)
     if (startDate) qb = qb.gte('start_date', startDate)
     if (endDate) qb = qb.lte('end_date', endDate)
     if (country.trim()) qb = qb.ilike('country', `%${country}%`)
@@ -117,7 +117,31 @@ export default function Home() {
   useEffect(() => {
     void loadPage(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, startDate, endDate, country, difficulty, perPage])
+  }, [startDate, endDate, country, difficulty, perPage])
+
+  const runInference = async () => {
+    if (!query.trim()) return
+    try {
+      setIsInferring(true)
+      const res = await fetch('/api/infer-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+      })
+      if (!res.ok) throw new Error('Inference failed')
+      const payload = await res.json()
+      const f = payload?.filters || {}
+      if (f.startDate !== undefined) setStartDate(f.startDate || '')
+      if (f.endDate !== undefined) setEndDate(f.endDate || '')
+      if (f.country !== undefined) setCountry(f.country || '')
+      if (f.difficulty !== undefined) setDifficulty(f.difficulty || '')
+      if (f.startDate || f.endDate || f.country || f.difficulty) setFiltersOpen(true)
+    } catch {
+      // ignore
+    } finally {
+      setIsInferring(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -132,31 +156,58 @@ export default function Home() {
               <div className="flex-1">
                 <input
                   className="form-input rounded-full"
-                  placeholder="Search tours"
+                  placeholder="Search tours with a prompt..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void runInference() } }}
                   aria-label="Search"
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-secondary-600">Per page</span>
-                <select className="form-input" value={perPage} onChange={(e) => setPerPage(Number(e.target.value))} aria-label="Per page">
-                  <option value={6}>6</option>
-                  <option value={9}>9</option>
-                  <option value={12}>12</option>
-                  <option value={18}>18</option>
-                </select>
+              <div>
+                <button
+                  className="btn-primary"
+                  disabled={isInferring || !query.trim()}
+                  onClick={() => void runInference()}
+                >
+                  {isInferring ? 'Analyzing…' : 'Search'}
+                </button>
               </div>
               <div className="md:ml-auto">
-                <button className="btn-secondary" onClick={() => setFiltersOpen((v) => !v)} aria-expanded={filtersOpen} aria-controls="filters-panel">
-                  {filtersOpen ? 'Hide Filters' : 'Filters'}
+                <button
+                  className="btn-secondary p-2 h-10 w-10 flex items-center justify-center"
+                  onClick={() => setFiltersOpen((v) => !v)}
+                  aria-expanded={filtersOpen}
+                  aria-controls="filters-panel"
+                  aria-label="Toggle filters"
+                  title={filtersOpen ? 'Hide filters' : 'Show filters'}
+                >
+                  {filtersOpen ? (
+                    // Chevron up
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                      <path fillRule="evenodd" d="M11.47 7.72a.75.75 0 0 1 1.06 0l6 6a.75.75 0 1 1-1.06 1.06L12 9.31l-5.47 5.47a.75.75 0 0 1-1.06-1.06l6-6z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    // Chevron down
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                      <path fillRule="evenodd" d="M12.53 16.28a.75.75 0 0 1-1.06 0l-6-6a.75.75 0 1 1 1.06-1.06L12 14.69l5.47-5.47a.75.75 0 0 1 1.06 1.06l-6 6z" clipRule="evenodd" />
+                    </svg>
+                  )}
                 </button>
               </div>
             </div>
 
             {/* Dropdown filters */}
             {filtersOpen && (
-              <div id="filters-panel" className="mt-4 border-t pt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div id="filters-panel" className="mt-4 border-t pt-4 grid grid-cols-1 md:grid-cols-6 gap-4">
+                <div>
+                  <label className="form-label">Per Page</label>
+                  <select className="form-input" value={perPage} onChange={(e) => setPerPage(Number(e.target.value))} aria-label="Per page">
+                    <option value={6}>6</option>
+                    <option value={9}>9</option>
+                    <option value={12}>12</option>
+                    <option value={18}>18</option>
+                  </select>
+                </div>
                 <div>
                   <label className="form-label">Start After</label>
                   <input type="date" className="form-input" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
@@ -179,7 +230,7 @@ export default function Home() {
                     <option value="intense">Intense</option>
                   </select>
                 </div>
-                <div className="md:col-span-4 flex justify-end">
+                <div className="flex items-end justify-end">
                   <button
                     className="btn-secondary"
                     onClick={() => {
