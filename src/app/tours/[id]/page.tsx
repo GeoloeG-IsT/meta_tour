@@ -23,6 +23,8 @@ export default function TourDetailsPage() {
   const [currentBookingsCount, setCurrentBookingsCount] = useState<number>(0)
   const [userBookingId, setUserBookingId] = useState<string | null>(null)
   const [isCancelling, setIsCancelling] = useState(false)
+  const [participants, setParticipants] = useState<Array<{ id: string; full_name: string | null; avatar_url: string | null }>>([])
+  const [participantsLoading, setParticipantsLoading] = useState(false)
 
   const tourId = useMemo(() => (Array.isArray(params.id) ? params.id[0] : params.id), [params.id])
 
@@ -81,6 +83,31 @@ export default function TourDetailsPage() {
           setUserBookingId(existingBooking?.id || null)
         } else {
           setUserBookingId(null)
+        }
+
+        // If organizer viewing own tour, load participants list
+        if (user && user.id === (data as any).organizer_id) {
+          try {
+            setParticipantsLoading(true)
+            const { data: rows, error: partErr } = await supabase
+              .from('bookings')
+              .select(`participant:users!bookings_participant_id_fkey ( id, full_name, avatar_url )`)
+              .eq('tour_id', tourId)
+              .neq('status', 'cancelled')
+            if (partErr) throw partErr
+            const unique: Record<string, { id: string; full_name: string | null; avatar_url: string | null }> = {}
+            ;(rows as any[] | null)?.forEach((r) => {
+              const p = r.participant
+              if (p && p.id) unique[p.id] = { id: p.id, full_name: p.full_name, avatar_url: p.avatar_url }
+            })
+            setParticipants(Object.values(unique))
+          } catch (e) {
+            // ignore; participants will remain empty
+          } finally {
+            setParticipantsLoading(false)
+          }
+        } else {
+          setParticipants([])
         }
       } catch (err) {
         console.error(err)
@@ -354,6 +381,32 @@ export default function TourDetailsPage() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {user?.id === tour.organizer_id && (
+          <div className="mt-10">
+            <h2 className="text-xl font-semibold text-secondary-900 mb-4">Participants</h2>
+            {participantsLoading ? (
+              <div className="text-secondary-600 text-sm">Loading participants…</div>
+            ) : participants.length === 0 ? (
+              <div className="text-secondary-600 text-sm">No participants yet</div>
+            ) : (
+              <ul className="divide-y divide-secondary-200 bg-white border border-secondary-200 rounded">
+                {participants.map((p) => (
+                  <li key={p.id} className="p-3 flex items-center gap-3">
+                    <span className="relative w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                      {p.avatar_url ? (
+                        <Image src={p.avatar_url} alt={p.full_name || 'Participant'} fill sizes="32px" className="object-cover" />
+                      ) : (
+                        <span className="w-full h-full inline-flex items-center justify-center text-xs text-gray-500">U</span>
+                      )}
+                    </span>
+                    <div className="text-sm text-secondary-900">{p.full_name || 'Unnamed participant'}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
       </div>

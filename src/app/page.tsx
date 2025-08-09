@@ -165,7 +165,7 @@ export default function Home() {
       <main className="min-h-screen px-4 sm:px-6 lg:px-8 py-8">
         {/* Filters + Tours grid */}
         <div className="w-full max-w-7xl mx-auto">
-          <div className="card p-4 mb-6">
+          <div className="card p-4 mb-6 sticky top-16 z-30">
             {/* Top row: Search + Per Page + Filters toggle */}
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
               <div className="flex-1">

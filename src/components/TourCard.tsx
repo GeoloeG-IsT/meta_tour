@@ -33,9 +33,10 @@ export default function TourCard({ tour, status = 'available', isBooked = false 
   }
 
   return (
-    <Link href={`/tours/${tour.id}`} className="group">
+    <div className="group">
       <div className="card overflow-hidden hover:shadow-lg transition-shadow duration-300">
-        <div className="relative h-48 bg-secondary-200">
+        <Link href={`/tours/${tour.id}`} aria-label={`View tour ${tour.title}`}>
+          <div className="relative h-48 bg-secondary-200">
           {/* Status badges */}
           <div className="absolute top-2 left-2 z-10 flex items-center gap-2">
             <span
@@ -56,18 +57,16 @@ export default function TourCard({ tour, status = 'available', isBooked = false 
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className="object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => {
-              // Fallback to placeholder if image fails to load
-              const target = e.target as HTMLImageElement
-              target.src = '/placeholder-tour.jpg'
-            }}
           />
-        </div>
+          </div>
+        </Link>
         
         <div className="p-6">
-          <h3 className="text-xl font-semibold text-secondary-900 mb-2 group-hover:text-primary-600 transition-colors line-clamp-2">
-            {tour.title}
-          </h3>
+          <Link href={`/tours/${tour.id}`} className="block group-hover:text-primary-600 transition-colors">
+            <h3 className="text-xl font-semibold text-secondary-900 mb-2 line-clamp-2">
+              {tour.title}
+            </h3>
+          </Link>
 
           <div className="mb-3 flex items-center gap-2 text-xs">
             {tour.country && (
@@ -81,7 +80,7 @@ export default function TourCard({ tour, status = 'available', isBooked = false 
               </span>
             )}
           </div>
-          
+
           <div className="flex items-center justify-between text-sm text-secondary-600 mb-3">
             <div className="flex items-center">
               <svg className="w-4 h-4 mr-1 text-secondary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,6 +111,6 @@ export default function TourCard({ tour, status = 'available', isBooked = false 
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   )
 }
