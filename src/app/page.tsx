@@ -234,7 +234,7 @@ export default function Home() {
                 <div>
                   <label className="form-label">Countries</label>
                   {countries.length === 0 ? (
-                    <div className="text-sm text-secondary-600">Use the search prompt to infer countries (e.g., "in Asia")</div>
+                    <div className="text-sm text-secondary-600">Use the search prompt to infer countries (e.g., &quot;in Asia&quot;)</div>
                   ) : (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {countries.map((c) => (
