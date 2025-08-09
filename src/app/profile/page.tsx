@@ -1,16 +1,20 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 
 export default function MyProfilePage() {
-  const { user, loading, profile } = useAuth()
+  const { user, loading, profile, reloadProfile } = useAuth()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
+  const [bio, setBio] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const [uploading, setUploading] = useState(false)
 
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -20,6 +24,7 @@ export default function MyProfilePage() {
     if (!loading && user) {
       setEmail(user.email || '')
       setFullName(profile?.full_name || '')
+      setBio(profile?.bio || '')
     }
   }, [loading, user, profile])
 
@@ -32,14 +37,15 @@ export default function MyProfilePage() {
     setError(null)
     try {
       setSaving(true)
-      // Update users table (full_name)
-      const { error: upErr } = await supabase.from('users').update({ full_name: fullName }).eq('id', user.id)
+      // Update users table (full_name, bio)
+      const { error: upErr } = await supabase.from('users').update({ full_name: fullName, bio }).eq('id', user.id)
       if (upErr) throw upErr
       // Update auth email if changed
       if (email && email !== user.email) {
         const { error: authErr } = await supabase.auth.updateUser({ email })
         if (authErr) throw authErr
       }
+      await reloadProfile()
       setMessage('Profile updated')
     } catch (e: any) {
       setError(e?.message || 'Failed to save')
@@ -82,15 +88,62 @@ export default function MyProfilePage() {
       {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
 
       <form onSubmit={handleSave} className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="form-label">Full Name</label>
-            <input className="form-input" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-start">
+          <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="form-label">Full Name</label>
+              <input className="form-input" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            </div>
+            <div>
+              <label className="form-label">Email</label>
+              <input type="email" className="form-input" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
           </div>
-          <div>
-            <label className="form-label">Email</label>
-            <input type="email" className="form-input" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <div className="sm:col-span-1">
+            <label className="form-label">Avatar</label>
+            <div className="flex items-center gap-4">
+              <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gray-200">
+                {profile?.avatar_url ? (
+                  <Image src={profile.avatar_url} alt="Avatar" fill sizes="64px" className="object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-secondary-500 text-sm">No img</div>
+                )}
+              </div>
+              <label className="btn-secondary">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file || !user) return
+                    try {
+                      setUploading(true)
+                      const path = `${user.id}/${Date.now()}_${file.name}`
+                      const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: false })
+                      if (upErr) throw upErr
+                      const { data: publicUrl } = supabase.storage.from('avatars').getPublicUrl(path)
+                      const newUrl = publicUrl.publicUrl
+                      const { error: updateErr } = await supabase.from('users').update({ avatar_url: newUrl }).eq('id', user.id)
+                      if (updateErr) throw updateErr
+                      await reloadProfile()
+                      setMessage('Avatar updated')
+                    } catch (e: any) {
+                      setError(e?.message || 'Failed to upload avatar')
+                    } finally {
+                      setUploading(false)
+                    }
+                  }}
+                />
+                {uploading ? 'Uploading…' : 'Upload'}
+              </label>
+            </div>
           </div>
+        </div>
+
+        <div>
+          <label className="form-label">Bio</label>
+          <textarea className="form-input min-h-[120px]" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell others about yourself" />
         </div>
 
         <div className="flex justify-end gap-3">

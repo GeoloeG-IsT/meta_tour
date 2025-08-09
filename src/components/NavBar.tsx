@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
+import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 
 export default function NavBar() {
@@ -48,6 +49,13 @@ export default function NavBar() {
                   onClick={() => setMenuOpen((v) => !v)}
                   className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900"
                 >
+                  {profile?.avatar_url ? (
+                    <span className="relative w-8 h-8 rounded-full overflow-hidden bg-gray-200">
+                      <Image src={profile.avatar_url} alt="Avatar" fill sizes="32px" className="object-cover" />
+                    </span>
+                  ) : (
+                    <span className="w-8 h-8 rounded-full bg-gray-200 inline-flex items-center justify-center text-xs text-gray-500">U</span>
+                  )}
                   <span>{profile?.full_name || user.email}</span>
                   <svg className={`w-4 h-4 text-gray-500 transform transition-transform ${menuOpen ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                 </button>

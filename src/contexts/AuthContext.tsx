@@ -8,6 +8,7 @@ interface UserProfile {
   id: string
   full_name: string | null
   avatar_url: string | null
+  bio: string | null
   role: 'participant' | 'organizer' | 'admin'
   created_at: string
 }
@@ -20,6 +21,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string, role: 'participant' | 'organizer') => Promise<{ error: any }>
   signIn: (email: string, password: string) => Promise<{ error: any }>
   signOut: () => Promise<void>
+    reloadProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -92,6 +94,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('AuthContext: fetchUserProfile finished')
       setLoading(false)
     }
+  }
+
+  const reloadProfile = async () => {
+    if (!user) return
+    await fetchUserProfile(user.id)
   }
 
   const signUp = async (email: string, password: string, fullName: string, role: 'participant' | 'organizer') => {
@@ -206,6 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signIn,
     signOut,
+    reloadProfile,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
