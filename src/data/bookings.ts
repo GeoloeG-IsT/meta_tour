@@ -9,4 +9,12 @@ export async function fetchMyBookings(userId: string) {
     .order('created_at', { ascending: false })
 }
 
+export async function fetchMyBookedTourIds(userId: string) {
+  return supabase
+    .from('bookings')
+    .select('tour_id')
+    .eq('participant_id', userId)
+    .neq('status', 'cancelled')
+}
+
 

@@ -40,7 +40,7 @@ export default function TourDetailsPage() {
         setIsLoading(true)
         setError(null)
 
-        const { data, error } = await supabase
+      const { data, error } = await supabase
           .from('tours')
           .select(
             `id, organizer_id, organizer_name, title, description, itinerary, start_date, end_date, price, currency, max_participants, status, country, difficulty,
@@ -249,7 +249,7 @@ export default function TourDetailsPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-600">Loading tour...</div>
+        <div className="text-gray-600">{t(locale, 'common_loading')}</div>
       </div>
     )
   }
@@ -258,8 +258,8 @@ export default function TourDetailsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">{error || 'Tour not found'}</h1>
-          <Link href="/tours" className="text-indigo-600 hover:text-indigo-500">← Back to all tours</Link>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">{error || t(locale, 'tour_not_found')}</h1>
+          <Link href="/tours" className="text-indigo-600 hover:text-indigo-500">← {t(locale, 'back_to_all_tours')}</Link>
         </div>
       </div>
     )
@@ -274,7 +274,7 @@ export default function TourDetailsPage() {
           {heroImage ? (
             <Image src={heroImage.image_url} alt={heroImage.alt_text || tour.title} fill className="object-cover" />
           ) : (
-            <div className="h-full w-full flex items-center justify-center text-secondary-600">No image</div>
+            <div className="h-full w-full flex items-center justify-center text-secondary-600">{t(locale, 'no_image')}</div>
           )}
         </div>
       </div>
@@ -315,7 +315,7 @@ export default function TourDetailsPage() {
 
             {tour.itinerary && (
               <div className="mt-8">
-                <h2 className="text-xl font-semibold text-secondary-900 mb-3">Itinerary</h2>
+                <h2 className="text-xl font-semibold text-secondary-900 mb-3">{t(locale, 'itinerary')}</h2>
                 <pre className="bg-secondary-50 border border-secondary-200 rounded p-4 overflow-x-auto text-sm">
 {JSON.stringify(tour.itinerary, null, 2)}
                 </pre>
@@ -328,13 +328,13 @@ export default function TourDetailsPage() {
               <div className="text-3xl font-bold text-primary-600">{formatPrice(tour.price, tour.currency)}</div>
               <div className="text-sm text-secondary-600 mt-1">{t(locale, 'tour_per_person')}</div>
               <div className="mt-4 text-sm text-secondary-700">
-                <span className="font-medium">Capacity:</span>{' '}
-                {currentBookingsCount}/{tour.max_participants} {isSoldOut && <span className="text-error-600 font-medium">(Sold out)</span>}
+                <span className="font-medium">{t(locale, 'capacity')}:</span>{' '}
+                {currentBookingsCount}/{tour.max_participants} {isSoldOut && <span className="text-error-600 font-medium">({t(locale, 'tour_sold_out')})</span>}
               </div>
 
               {profile?.role === 'organizer' && user?.id === tour.organizer_id && (
                 <div className="mt-4">
-                  <Link href={`/dashboard/organizer/tours/${tour.id}`} className="btn-secondary">Edit Tour</Link>
+                  <Link href={`/dashboard/organizer/tours/${tour.id}`} className="btn-secondary">{t(locale, 'edit_tour')}</Link>
                 </div>
               )}
 

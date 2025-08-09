@@ -95,6 +95,12 @@ const en: Dictionary = {
   tour_only_participants: 'Only participants can book',
   tour_cancel_booking: 'Cancel Booking',
   tour_book_now: 'Book Now',
+  tour_not_found: 'Tour not found',
+  back_to_all_tours: 'Back to all tours',
+  no_image: 'No image',
+  capacity: 'Capacity',
+  itinerary: 'Itinerary',
+  edit_tour: 'Edit Tour',
 }
 
 const fr: Dictionary = {
@@ -183,6 +189,12 @@ const fr: Dictionary = {
   tour_only_participants: 'Seuls les participants peuvent réserver',
   tour_cancel_booking: 'Annuler',
   tour_book_now: 'Réserver',
+  tour_not_found: 'Voyage introuvable',
+  back_to_all_tours: 'Retour à tous les voyages',
+  no_image: 'Pas d’image',
+  capacity: 'Capacité',
+  itinerary: 'Itinéraire',
+  edit_tour: 'Modifier le voyage',
 }
 
 const de: Dictionary = {
@@ -271,6 +283,12 @@ const de: Dictionary = {
   tour_only_participants: 'Nur Teilnehmer können buchen',
   tour_cancel_booking: 'Buchung stornieren',
   tour_book_now: 'Jetzt buchen',
+  tour_not_found: 'Tour nicht gefunden',
+  back_to_all_tours: 'Zurück zu allen Touren',
+  no_image: 'Kein Bild',
+  capacity: 'Kapazität',
+  itinerary: 'Reiseverlauf',
+  edit_tour: 'Tour bearbeiten',
 }
 
 const uk: Dictionary = {
@@ -359,6 +377,12 @@ const uk: Dictionary = {
   tour_only_participants: 'Лише учасники можуть бронювати',
   tour_cancel_booking: 'Скасувати бронювання',
   tour_book_now: 'Забронювати',
+  tour_not_found: 'Тур не знайдено',
+  back_to_all_tours: 'Назад до всіх турів',
+  no_image: 'Немає зображення',
+  capacity: 'Місткість',
+  itinerary: 'Маршрут',
+  edit_tour: 'Редагувати тур',
 }
 
 const ru: Dictionary = {
@@ -447,6 +471,12 @@ const ru: Dictionary = {
   tour_only_participants: 'Только участники могут бронировать',
   tour_cancel_booking: 'Отменить бронь',
   tour_book_now: 'Забронировать',
+  tour_not_found: 'Тур не найден',
+  back_to_all_tours: 'Назад ко всем турам',
+  no_image: 'Нет изображения',
+  capacity: 'Вместимость',
+  itinerary: 'Маршрут',
+  edit_tour: 'Редактировать тур',
 }
 
 const es: Dictionary = {
@@ -535,6 +565,12 @@ const es: Dictionary = {
   tour_only_participants: 'Solo los participantes pueden reservar',
   tour_cancel_booking: 'Cancelar reserva',
   tour_book_now: 'Reservar ahora',
+  tour_not_found: 'Tour no encontrado',
+  back_to_all_tours: 'Volver a todos los tours',
+  no_image: 'Sin imagen',
+  capacity: 'Capacidad',
+  itinerary: 'Itinerario',
+  edit_tour: 'Editar tour',
 }
 
 const it: Dictionary = {
@@ -623,6 +659,12 @@ const it: Dictionary = {
   tour_only_participants: 'Solo i partecipanti possono prenotare',
   tour_cancel_booking: 'Annulla prenotazione',
   tour_book_now: 'Prenota ora',
+  tour_not_found: 'Tour non trovato',
+  back_to_all_tours: 'Torna a tutti i tour',
+  no_image: 'Nessuna immagine',
+  capacity: 'Capacità',
+  itinerary: 'Itinerario',
+  edit_tour: 'Modifica tour',
 }
 
 const dictionaries: Record<Locale, Dictionary> = { en, fr, de, uk, ru, es, it }

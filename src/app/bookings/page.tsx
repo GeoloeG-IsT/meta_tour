@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { fetchMyBookings } from '@/data/bookings'
 import BookingCard from '@/components/BookingCard'
+import Button from '@/components/ui/Button'
 import { useI18n } from '@/contexts/I18nContext'
 import { t } from '@/i18n'
 

@@ -38,4 +38,34 @@ export async function fetchTourParticipants(tourId: string) {
     .neq('status', 'cancelled')
 }
 
+export function mapTours(data: any[]): Array<{
+  id: string
+  organizer_id?: string
+  organizer_name?: string | null
+  title: string
+  start_date: string
+  end_date: string
+  price: number
+  currency: string
+  country?: string | null
+  difficulty?: string | null
+  availability_status?: string | null
+  tour_images?: { image_url: string; alt_text?: string | null }[]
+}> {
+  return (data || []).map((t: any) => ({
+    id: t.id,
+    organizer_id: t.organizer_id,
+    organizer_name: t.organizer_name,
+    title: t.title,
+    start_date: t.start_date,
+    end_date: t.end_date,
+    price: t.price,
+    currency: t.currency,
+    country: t.country,
+    difficulty: t.difficulty,
+    availability_status: t.availability_status,
+    tour_images: t.tour_images,
+  }))
+}
+
 

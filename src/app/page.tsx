@@ -3,12 +3,15 @@
 import { useAuth } from '@/contexts/AuthContext'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { fetchMyBookedTourIds } from '@/data/bookings'
 import TourFiltersBar from '@/components/filters/TourFiltersBar'
-import { fetchPublishedTours } from '@/data/tours'
+import { fetchPublishedTours, mapTours } from '@/data/tours'
 import { SORT_OPTIONS } from '@/constants/tours'
 import { useI18n } from '@/contexts/I18nContext'
 import { t } from '@/i18n'
 import TourCard from '@/components/TourCard'
+import Button from '@/components/ui/Button'
+import { usePaginatedList } from '@/hooks/usePaginatedList'
 import type { TourSummary } from '@/types/tour'
 
 export default function Home() {
@@ -40,19 +43,20 @@ export default function Home() {
     async function loadBooked() {
       try {
         if (!user) { setBookedIds([]); return }
-        const { data: myBookings } = await supabase
-          .from('bookings')
-          .select('tour_id')
-          .eq('participant_id', user.id)
-          .neq('status', 'cancelled')
+        const { data: myBookings } = await fetchMyBookedTourIds(user.id)
         setBookedIds((myBookings || []).map((b: any) => b.tour_id))
       } catch {}
     }
     void loadBooked()
   }, [user])
 
-  // Repository-backed fetch builder (range applied later)
-  const buildQuery = () => fetchPublishedTours({ startDate, endDate, countries, difficulty, sort: mapSort(sort) }, undefined)
+  // Pagination fetcher
+  const fetchPage = async (from: number, to: number): Promise<Tour[]> => {
+    const { data, error } = await fetchPublishedTours({ startDate, endDate, countries, difficulty, sort: mapSort(sort) }, { from, to })
+    if (error) throw error
+    return mapTours((data as any[]) || []) as Tour[]
+  }
+  const { items, isLoading, error: listError, hasMore: hookHasMore, load } = usePaginatedList<Tour>(fetchPage, perPage)
 
   function mapSort(value: string) {
     const found = SORT_OPTIONS.find((o) => o.value === value)
@@ -86,20 +90,7 @@ export default function Home() {
         durationMs: Math.round((t1 - t0) as number),
       })
       if (error) throw error
-      const newItems: Tour[] = ((data as any[]) || []).map((t) => ({
-        id: t.id,
-        organizer_id: t.organizer_id,
-        organizer_name: t.organizer_name,
-        title: t.title,
-        start_date: t.start_date,
-        end_date: t.end_date,
-        price: t.price,
-        currency: t.currency,
-        country: t.country,
-        difficulty: t.difficulty,
-        availability_status: t.availability_status,
-        tour_images: t.tour_images,
-      }))
+      const newItems: Tour[] = mapTours((data as any[]) || []) as Tour[]
       setTours((prev) => (reset ? newItems : [...prev, ...newItems]))
       const received = newItems.length
       setOffset(from + received)
@@ -114,8 +105,14 @@ export default function Home() {
     }
   }
 
+  // Sync hook results into local state used by existing UI
+  useEffect(() => { setTours(items) }, [items])
+  useEffect(() => { setToursLoading(isLoading) }, [isLoading])
+  useEffect(() => { setToursError(listError || null) }, [listError])
+  useEffect(() => { setHasMore(hookHasMore) }, [hookHasMore])
+
   useEffect(() => {
-    void loadPage(true)
+    void load(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startDate, endDate, countries, difficulty, perPage, sort])
 
@@ -202,10 +199,10 @@ export default function Home() {
           </div>
               {hasMore && (
                 <div className="mt-8 flex justify-center">
-                  <button className="btn-secondary" onClick={() => void loadPage(false)} disabled={isLoadingMore}>
-                    {isLoadingMore ? 'Loading…' : 'Load More'}
-                  </button>
-          </div>
+                  <Button variant="secondary" onClick={() => void load(false)} disabled={isLoading}>
+                    {isLoading ? t(locale, 'common_loading') : t(locale, 'home_load_more')}
+                  </Button>
+                </div>
               )}
             </>
           )}

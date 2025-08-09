@@ -8,6 +8,9 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useI18n } from '@/contexts/I18nContext'
 import { supportedLocales, type Locale } from '@/i18n/config'
 import { t } from '@/i18n'
+import { uploadAvatar } from '@/lib/storage'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
 
 export default function MyProfilePage() {
   const { user, loading, profile, reloadProfile } = useAuth()
@@ -108,11 +111,11 @@ export default function MyProfilePage() {
           <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="form-label">{t(locale, 'profile_full_name')}</label>
-              <input className="form-input" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+              <Input value={fullName} onChange={(e) => setFullName((e.target as HTMLInputElement).value)} />
             </div>
             <div>
               <label className="form-label">{t(locale, 'profile_email')}</label>
-              <input type="email" className="form-input" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input type="email" value={email} onChange={(e) => setEmail((e.target as HTMLInputElement).value)} />
             </div>
           </div>
           <div className="sm:col-span-1">
@@ -135,11 +138,7 @@ export default function MyProfilePage() {
                     if (!file || !user) return
                     try {
                       setUploading(true)
-                      const path = `${user.id}/${Date.now()}_${file.name}`
-                      const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: false })
-                      if (upErr) throw upErr
-                      const { data: publicUrl } = supabase.storage.from('avatars').getPublicUrl(path)
-                      const newUrl = publicUrl.publicUrl
+                      const newUrl = await uploadAvatar(user.id, file)
                       const { error: updateErr } = await supabase.from('users').update({ avatar_url: newUrl }).eq('id', user.id)
                       if (updateErr) throw updateErr
                       await reloadProfile()
@@ -195,7 +194,7 @@ export default function MyProfilePage() {
         </div>
 
         <div className="flex justify-end gap-3">
-          <button type="submit" className="btn-primary" disabled={saving}>{saving ? t(locale, 'common_saving') : t(locale, 'profile_save_changes')}</button>
+          <Button type="submit" disabled={saving}>{saving ? t(locale, 'common_saving') : t(locale, 'profile_save_changes')}</Button>
         </div>
         </form>
 
@@ -204,13 +203,13 @@ export default function MyProfilePage() {
           <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
           <div>
             <label className="form-label">{t(locale, 'profile_new_password')}</label>
-            <input type="password" className="form-input" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+            <Input type="password" value={newPassword} onChange={(e) => setNewPassword((e.target as HTMLInputElement).value)} />
           </div>
           <div>
             <label className="form-label">{t(locale, 'profile_confirm_new_password')}</label>
-            <input type="password" className="form-input" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+            <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword((e.target as HTMLInputElement).value)} />
           </div>
-          <button type="submit" className="btn-secondary" disabled={changingPassword}>{changingPassword ? t(locale, 'common_updating') : t(locale, 'profile_update_password')}</button>
+          <Button type="submit" variant="secondary" disabled={changingPassword}>{changingPassword ? t(locale, 'common_updating') : t(locale, 'profile_update_password')}</Button>
           </form>
         </div>
       </div>
