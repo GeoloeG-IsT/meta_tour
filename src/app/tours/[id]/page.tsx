@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
+import ParticipantsList from '@/components/participants/ParticipantsList'
+import { formatDisplayDate, formatPrice } from '@/lib/format'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
@@ -242,14 +244,7 @@ export default function TourDetailsPage() {
     }
   }
 
-  const formatDate = (dateString: string) => {
-    const d = new Date(dateString)
-    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-  }
-
-  const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(price)
-  }
+  const formatDate = (dateString: string) => formatDisplayDate(dateString)
 
   if (isLoading) {
     return (
@@ -392,20 +387,7 @@ export default function TourDetailsPage() {
             ) : participants.length === 0 ? (
               <div className="text-secondary-600 text-sm">No participants yet</div>
             ) : (
-              <ul className="divide-y divide-secondary-200 bg-white border border-secondary-200 rounded">
-                {participants.map((p) => (
-                  <li key={p.id} className="p-3 flex items-center gap-3">
-                    <span className="relative w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-                      {p.avatar_url ? (
-                        <Image src={p.avatar_url} alt={p.full_name || 'Participant'} fill sizes="32px" className="object-cover" />
-                      ) : (
-                        <span className="w-full h-full inline-flex items-center justify-center text-xs text-gray-500">U</span>
-                      )}
-                    </span>
-                    <div className="text-sm text-secondary-900">{p.full_name || 'Unnamed participant'}</div>
-                  </li>
-                ))}
-              </ul>
+              <ParticipantsList participants={participants} />
             )}
           </div>
         )}

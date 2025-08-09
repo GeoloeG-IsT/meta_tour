@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import type { TourSummary } from '@/types/tour'
+import { formatShortDate, formatPrice } from '@/lib/format'
 
 interface TourCardProps {
   tour: TourSummary
@@ -14,23 +15,7 @@ export default function TourCard({ tour, status = 'available', isBooked = false 
   const thumbnailUrl = thumbnailImage?.image_url || '/placeholder-tour.jpg'
   const altText = thumbnailImage?.alt_text || `${tour.title} tour image`
 
-  // Format dates
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
-  }
-
-  // Format price
-  const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD'
-    }).format(price)
-  }
+  const formatDate = (dateString: string) => formatShortDate(dateString)
 
   return (
     <div className="group">
