@@ -3,8 +3,15 @@ import { NextResponse } from 'next/server'
 type Filters = {
   startDate?: string | null
   endDate?: string | null
-  country?: string | null
+  countries?: string[] | null
   difficulty?: 'easy' | 'moderate' | 'challenging' | 'intense' | null
+}
+
+function titleCase(input: string): string {
+  return input
+    .split(' ')
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+    .join(' ')
 }
 
 function simpleInfer(query: string): Filters {
@@ -23,17 +30,44 @@ function simpleInfer(query: string): Filters {
   if (dates.length > 0) filters.startDate = dates[0]
   if (dates.length > 1) filters.endDate = dates[1]
 
+  // Region detection → country list
+  const regions: Record<string, string[]> = {
+    asia: [
+      'China','India','Japan','Indonesia','Pakistan','Bangladesh','Vietnam','Philippines','Thailand','Myanmar','South Korea','Nepal','Sri Lanka','Malaysia','Cambodia','Laos','Mongolia','Bhutan','Singapore','Brunei','Timor-Leste','Maldives'
+    ],
+    'southeast asia': ['Indonesia','Thailand','Vietnam','Philippines','Malaysia','Singapore','Cambodia','Laos','Myanmar','Brunei','Timor-Leste'],
+    'south asia': ['India','Pakistan','Bangladesh','Sri Lanka','Nepal','Bhutan','Maldives'],
+    'east asia': ['China','Japan','South Korea','Mongolia','Taiwan'],
+    europe: [
+      'United Kingdom','Ireland','France','Spain','Portugal','Italy','Germany','Netherlands','Belgium','Switzerland','Austria','Greece','Norway','Sweden','Finland','Denmark','Poland','Czech Republic','Hungary','Croatia','Slovenia','Slovakia','Romania','Bulgaria'
+    ],
+    'western europe': ['France','Spain','Portugal','Italy','Germany','Netherlands','Belgium','Switzerland','Austria'],
+    africa: ['Morocco','Egypt','South Africa','Kenya','Tanzania','Ethiopia','Ghana','Nigeria','Rwanda','Uganda','Namibia','Botswana'],
+    'north america': ['United States','Canada','Mexico'],
+    'central america': ['Guatemala','Belize','Honduras','El Salvador','Nicaragua','Costa Rica','Panama'],
+    'south america': ['Brazil','Argentina','Chile','Peru','Colombia','Ecuador','Bolivia','Paraguay','Uruguay','Venezuela'],
+    oceania: ['Australia','New Zealand','Fiji','Samoa','Papua New Guinea','Vanuatu']
+  }
+  for (const regionKey of Object.keys(regions)) {
+    if (q.includes(regionKey)) {
+      filters.countries = regions[regionKey].map((n) => n.toLowerCase())
+      break
+    }
+  }
+
   // Country detection: naive list
-  const countries = [
+  const countryList = [
     'nepal','india','peru','spain','italy','france','portugal','greece','japan','thailand','indonesia','morocco',
     'united states','usa','canada','mexico','brazil','argentina','chile','australia','new zealand','egypt','turkey'
   ]
-  for (const c of countries) {
+  for (const c of countryList) {
     if (q.includes(c)) {
-      // Capitalize nicely
-      const normalized = c.split(' ').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-      filters.country = normalized === 'Usa' ? 'United States' : normalized
-      break
+      const finalLower = c === 'usa' ? 'united states' : c
+      if (filters.countries) {
+        if (!filters.countries.includes(finalLower)) filters.countries.push(finalLower)
+      } else if (!filters.countries) {
+        filters.countries = [finalLower]
+      }
     }
   }
 
@@ -55,15 +89,16 @@ export async function POST(request: Request) {
     }
 
     const system = `You are an assistant that extracts search filters from a brief trip description.
-Return a STRICT JSON object with keys: startDate, endDate, country, difficulty.
+Return a STRICT JSON object with keys: startDate, endDate, countries, difficulty.
 Rules:
 - Dates must be in YYYY-MM-DD when you can infer a concrete date; otherwise null.
 - Difficulty must be one of: easy | moderate | challenging | intense | null.
-- Country should be a country name in Title Case if confidently inferred; otherwise null.
+- Countries should be an array of country names in Title Case mentioned in the description directly or indirectly (e.g. if a continent is mentioned, include the top 10 countries in that continent).
 - If you cannot infer a field, set it to null. Do not guess beyond common sense.`
 
     const user = `Description: ${query}`
 
+    const callStart = Date.now()
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -80,6 +115,8 @@ Rules:
         response_format: { type: 'json_object' },
       }),
     })
+    const callEnd = Date.now()
+    console.log('[Infer Search] LLM call ms:', callEnd - callStart)
 
     if (!res.ok) {
       // Fallback to heuristic if LLM call fails
@@ -88,6 +125,7 @@ Rules:
 
     const data = await res.json()
     const content = data?.choices?.[0]?.message?.content
+    console.log('content', content)
     if (!content) {
       return NextResponse.json({ filters: simpleInfer(query) })
     }
@@ -100,12 +138,20 @@ Rules:
     }
 
     // Sanitize outputs
+    // Normalize countries list
+    let countriesList: string[] | null = null
+    if (Array.isArray(parsed.countries)) {
+      countriesList = parsed.countries
+        .map((c) => (typeof c === 'string' ? c.trim().toLowerCase() : ''))
+        .filter(Boolean)
+    }
+
     const out: Filters = {
       startDate: parsed.startDate || null,
       endDate: parsed.endDate || null,
-      country: parsed.country || null,
+      countries: countriesList && countriesList.length > 0 ? countriesList : null,
       difficulty: (['easy','moderate','challenging','intense'] as const).includes((parsed.difficulty as any))
-        ? parsed.difficulty as any
+        ? (parsed.difficulty as any)
         : null,
     }
 

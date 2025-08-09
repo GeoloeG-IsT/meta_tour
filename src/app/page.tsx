@@ -19,8 +19,8 @@ export default function Home() {
   const [query, setQuery] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
-  const [country, setCountry] = useState('')
   const [difficulty, setDifficulty] = useState('')
+  const [countries, setCountries] = useState<string[]>([])
   const [perPage, setPerPage] = useState(9)
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
@@ -69,7 +69,7 @@ export default function Home() {
 
     if (startDate) qb = qb.gte('start_date', startDate)
     if (endDate) qb = qb.lte('end_date', endDate)
-    if (country.trim()) qb = qb.ilike('country', `%${country}%`)
+    if (countries.length > 0) qb = qb.in('country', countries.map((c) => c.toLowerCase()))
     if (difficulty) qb = qb.eq('difficulty', difficulty)
     return qb
   }
@@ -86,7 +86,20 @@ export default function Home() {
       }
       const from = reset ? 0 : offset
       const to = from + perPage - 1
+      const countriesLower = countries.map((c) => c.toLowerCase())
+      console.log('[Tours] Fetch start', {
+        when: new Date().toISOString(),
+        reset,
+        filters: { startDate, endDate, difficulty, countries: countriesLower },
+        pagination: { from, to, perPage, prevOffset: offset },
+      })
+      const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now()
       const { data, error } = await buildQuery().range(from, to)
+      const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now()
+      console.log('[Tours] Fetch end', {
+        when: new Date().toISOString(),
+        durationMs: Math.round((t1 - t0) as number),
+      })
       if (error) throw error
       const newItems: Tour[] = ((data as any[]) || []).map((t) => ({
         id: t.id,
@@ -106,7 +119,9 @@ export default function Home() {
       const received = newItems.length
       setOffset(from + received)
       setHasMore(received === perPage)
+      console.log('[Tours] Page results', { received, totalNow: (reset ? newItems.length : newItems.length + tours.length), hasMore: received === perPage })
     } catch (err) {
+      console.error('[Tours] Fetch error', err)
       setToursError('Failed to load tours. Please try again later.')
     } finally {
       setToursLoading(false)
@@ -117,7 +132,7 @@ export default function Home() {
   useEffect(() => {
     void loadPage(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate, endDate, country, difficulty, perPage])
+  }, [startDate, endDate, countries, difficulty, perPage])
 
   const runInference = async () => {
     if (!query.trim()) return
@@ -133,9 +148,9 @@ export default function Home() {
       const f = payload?.filters || {}
       if (f.startDate !== undefined) setStartDate(f.startDate || '')
       if (f.endDate !== undefined) setEndDate(f.endDate || '')
-      if (f.country !== undefined) setCountry(f.country || '')
+      if (Array.isArray(f.countries)) setCountries(f.countries)
       if (f.difficulty !== undefined) setDifficulty(f.difficulty || '')
-      if (f.startDate || f.endDate || f.country || f.difficulty) setFiltersOpen(true)
+      if (f.startDate || f.endDate || (Array.isArray(f.countries) && f.countries.length > 0) || f.difficulty) setFiltersOpen(true)
     } catch {
       // ignore
     } finally {
@@ -217,8 +232,25 @@ export default function Home() {
                   <input type="date" className="form-input" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
                 </div>
                 <div>
-                  <label className="form-label">Country</label>
-                  <input className="form-input" placeholder="e.g., Nepal" value={country} onChange={(e) => setCountry(e.target.value)} />
+                  <label className="form-label">Countries</label>
+                  {countries.length === 0 ? (
+                    <div className="text-sm text-secondary-600">Use the search prompt to infer countries (e.g., "in Asia")</div>
+                  ) : (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {countries.map((c) => (
+                        <span key={c} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          {c}
+                          <button
+                            className="ml-1 text-gray-500 hover:text-gray-700"
+                            onClick={() => setCountries((prev) => prev.filter((x) => x !== c))}
+                            aria-label={`Remove ${c}`}
+                          >
+                            ×
+                          </button>
+                  </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="form-label">Difficulty</label>
@@ -237,7 +269,7 @@ export default function Home() {
                       setQuery('');
                       setStartDate('');
                       setEndDate('');
-                      setCountry('');
+                      setCountries([]);
                       setDifficulty('');
                       setPerPage(9);
                     }}
@@ -247,7 +279,7 @@ export default function Home() {
                 </div>
               </div>
             )}
-          </div>
+        </div>
 
           {toursLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -275,7 +307,7 @@ export default function Home() {
                     isBooked={user ? bookedIds.includes(tour.id) : false}
                   />
                 ))}
-              </div>
+          </div>
               {hasMore && (
                 <div className="mt-8 flex justify-center">
                   <button className="btn-secondary" onClick={() => void loadPage(false)} disabled={isLoadingMore}>
