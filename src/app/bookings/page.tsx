@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase } from '@/lib/supabase'
+import { fetchMyBookings } from '@/data/bookings'
 import BookingCard from '@/components/BookingCard'
 
 interface BookingRow {
@@ -29,15 +29,7 @@ export default function MyBookingsPage() {
     try {
       setIsLoading(true)
       setError(null)
-      const { data, error } = await supabase
-        .from('bookings')
-        .select(
-          `id, status, payment_status, created_at,
-           tour:tours ( id, title, start_date, end_date )`
-        )
-        .eq('participant_id', user!.id)
-        .neq('status', 'cancelled')
-        .order('created_at', { ascending: false })
+      const { data, error } = await fetchMyBookings(user!.id)
 
       if (error) throw error
 
