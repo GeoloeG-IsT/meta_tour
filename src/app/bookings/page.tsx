@@ -6,6 +6,7 @@ import { fetchMyBookings } from '@/data/bookings'
 import BookingCard from '@/components/BookingCard'
 import Button from '@/components/ui/Button'
 import { useI18n } from '@/contexts/I18nContext'
+import { useRouter } from 'next/navigation'
 import { t } from '@/i18n'
 
 interface BookingRow {
@@ -18,6 +19,7 @@ interface BookingRow {
 
 export default function MyBookingsPage() {
   const { user, profile, loading } = useAuth()
+  const router = useRouter()
   const { locale } = useI18n()
   const [bookings, setBookings] = useState<BookingRow[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -52,7 +54,7 @@ export default function MyBookingsPage() {
         })) || []
       )
     } catch (err) {
-      setError('Failed to load bookings')
+      setError(t(locale, 'bookings_load_failed'))
     } finally {
       setIsLoading(false)
     }
@@ -67,9 +69,7 @@ export default function MyBookingsPage() {
   }
 
   if (!user) {
-    if (typeof window !== 'undefined') {
-      window.location.assign('/login')
-    }
+    router.push('/login')
     return null
   }
 

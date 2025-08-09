@@ -9,7 +9,8 @@ import { useI18n } from '@/contexts/I18nContext'
 import { t } from '@/i18n'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { fetchTourParticipants } from '@/data/tours'
+import { ensureBooking, hardCancelBooking, softCancelBooking } from '@/data/bookings'
+import { fetchTourParticipants, fetchTourById, countBookingsForTour, fetchExistingBookingId } from '@/data/tours'
 import { useAuth } from '@/contexts/AuthContext'
 import type { TourDetail } from '@/types/tour'
 
@@ -40,14 +41,7 @@ export default function TourDetailsPage() {
         setIsLoading(true)
         setError(null)
 
-      const { data, error } = await supabase
-          .from('tours')
-          .select(
-            `id, organizer_id, organizer_name, title, description, itinerary, start_date, end_date, price, currency, max_participants, status, country, difficulty,
-             tour_images:tour_images!tour_images_tour_id_fkey ( image_url, alt_text )`
-          )
-          .eq('id', tourId)
-          .maybeSingle()
+      const { data, error } = await fetchTourById(tourId)
 
         if (error) throw error
 
@@ -68,23 +62,13 @@ export default function TourDetailsPage() {
         setTour(data as Tour)
 
         // Fetch current bookings count (exclude cancelled)
-        const { count } = await supabase
-          .from('bookings')
-          .select('id', { count: 'exact', head: true })
-          .eq('tour_id', tourId)
-          .neq('status', 'cancelled')
+        const { count } = await countBookingsForTour(tourId)
 
         setCurrentBookingsCount(count || 0)
 
         // Check if current user already has a booking for this tour (non-cancelled)
         if (user) {
-          const { data: existingBooking } = await supabase
-            .from('bookings')
-            .select('id')
-            .eq('tour_id', tourId)
-            .eq('participant_id', user.id)
-            .neq('status', 'cancelled')
-            .maybeSingle()
+          const { data: existingBooking } = await fetchExistingBookingId(tourId, user.id)
 
           setUserBookingId(existingBooking?.id || null)
         } else {
@@ -113,7 +97,7 @@ export default function TourDetailsPage() {
         }
       } catch (err) {
         console.error(err)
-        setError('Failed to load tour')
+        setError(t(locale, 'tour_load_failed'))
       } finally {
         setIsLoading(false)
       }
@@ -148,51 +132,17 @@ export default function TourDetailsPage() {
     try {
       setIsBooking(true)
       setBookingMessage(null)
-
-      // Try to insert booking; unique constraint prevents duplicates
-      const { data: inserted, error } = await supabase.from('bookings').insert({
-        tour_id: tour.id,
-        participant_id: user.id,
-        status: 'pending',
-        payment_status: 'unpaid',
-      }).select('id').single()
-
-      if (error) {
-        // If a previous cancelled booking exists, re-activate it
-        if (error.code === '23505' || (typeof error.message === 'string' && error.message.includes('duplicate'))) {
-          const { data: reactivated, error: reactivateError } = await supabase
-            .from('bookings')
-            .update({ status: 'pending', payment_status: 'unpaid' })
-            .eq('tour_id', tour.id)
-            .eq('participant_id', user.id)
-            .eq('status', 'cancelled')
-            .select('id')
-            .maybeSingle()
-
-          if (reactivateError || !reactivated) {
-            setBookingMessage('Failed to create booking. Please try again.')
-            return
-          }
-
-          setUserBookingId(reactivated.id)
-          setBookingMessage('Booking re-activated!')
-          setCurrentBookingsCount((n) => n + 1)
-          try { router.refresh() } catch {}
-          return
-        }
-
-        setBookingMessage('Failed to create booking. Please try again.')
+      const result = await ensureBooking(tour.id, user.id)
+      if (result.error || !result.id) {
+        setBookingMessage(t(locale, 'booking_create_failed') || 'Failed to create booking. Please try again.')
         return
       }
-
-      if (inserted?.id) {
-        setUserBookingId(inserted.id)
-      }
-      setBookingMessage('Booking created! We will contact you with next steps.')
+      setUserBookingId(result.id)
+      setBookingMessage(result.kind === 'reactivated' ? 'Booking re-activated!' : 'Booking created! We will contact you with next steps.')
       setCurrentBookingsCount((n) => n + 1)
       try { router.refresh() } catch {}
     } catch (err) {
-      setBookingMessage('Unexpected error during booking')
+      setBookingMessage(t(locale, 'booking_unexpected_error') || 'Unexpected error during booking')
     } finally {
       setIsBooking(false)
     }
@@ -200,37 +150,19 @@ export default function TourDetailsPage() {
 
   const handleCancelBooking = async () => {
     if (!userBookingId || !user) return
-    const confirmed = typeof window !== 'undefined' ? window.confirm('Are you sure you want to cancel your booking?') : true
+    const confirmed = typeof window !== 'undefined' ? window.confirm(t(locale, 'booking_confirm_cancel')) : true
     if (!confirmed) return
     try {
       setIsCancelling(true)
       setBookingMessage(null)
-      console.log('Cancelling booking', userBookingId, user.id)
-      console.log('Booking', userBookingId)
-      console.log('User', user.id)
-      console.log('Tour', tour?.id)
-      const { error } = await supabase
-        .from('bookings')
-        .delete()
-        .eq('id', userBookingId)
-        .eq('participant_id', user.id)
-        .select()
-        .single()
+      const { error } = await hardCancelBooking(userBookingId, user.id)
       if (error) throw error
       setUserBookingId(null)
       setCurrentBookingsCount((n) => Math.max(0, (n || 0) - 1))
-      setBookingMessage('Your booking has been cancelled.')
+      setBookingMessage(t(locale, 'booking_cancelled') || 'Your booking has been cancelled.')
     } catch (err) {
-      // Fallback: try soft-cancel if hard delete fails due to RLS or 406 Not Acceptable (no select)
       try {
-        const { error: updateError } = await supabase
-          .from('bookings')
-          .update({ status: 'cancelled' })
-          .eq('id', userBookingId)
-          .eq('participant_id', user.id)
-          .neq('status', 'cancelled')
-          .select()
-          .single()
+        const { error: updateError } = await softCancelBooking(userBookingId, user.id)
         if (!updateError) {
           setUserBookingId(null)
           setCurrentBookingsCount((n) => Math.max(0, (n || 0) - 1))
@@ -238,7 +170,7 @@ export default function TourDetailsPage() {
           return
         }
       } catch {}
-      setBookingMessage('Failed to cancel booking. Please try again.')
+      setBookingMessage(t(locale, 'booking_cancel_failed') || 'Failed to cancel booking. Please try again.')
     } finally {
       setIsCancelling(false)
     }
@@ -345,7 +277,7 @@ export default function TourDetailsPage() {
                   <button disabled className="btn-secondary w-full">{t(locale, 'tour_only_participants')}</button>
                 ) : userBookingId ? (
                   <div className="flex flex-col sm:flex-row gap-2">
-                    <button onClick={() => router.push(`/bookings/${userBookingId}`)} className="btn-secondary flex-1">View Booking</button>
+                  <button onClick={() => router.push(`/bookings/${userBookingId}`)} className="btn-secondary flex-1">{t(locale, 'common_view_booking')}</button>
                     <button onClick={handleCancelBooking} disabled={isCancelling} className="btn-secondary flex-1">
                       {isCancelling ? 'Cancelling…' : t(locale, 'tour_cancel_booking')}
                     </button>
@@ -354,7 +286,7 @@ export default function TourDetailsPage() {
                   <button disabled className="btn-secondary w-full">{t(locale, 'tour_sold_out')}</button>
                 ) : (
                   <button onClick={handleBook} disabled={isBooking} className="btn-primary w-full">
-                    {isBooking ? 'Booking...' : t(locale, 'tour_book_now')}
+                    {isBooking ? t(locale, 'booking_booking') : t(locale, 'tour_book_now')}
                   </button>
                 )}
               </div>
@@ -383,9 +315,9 @@ export default function TourDetailsPage() {
           <div className="mt-10">
             <h2 className="text-xl font-semibold text-secondary-900 mb-4">Participants</h2>
             {participantsLoading ? (
-              <div className="text-secondary-600 text-sm">Loading participants…</div>
+              <div className="text-secondary-600 text-sm">{t(locale, 'participants_loading')}</div>
             ) : participants.length === 0 ? (
-              <div className="text-secondary-600 text-sm">No participants yet</div>
+              <div className="text-secondary-600 text-sm">{t(locale, 'no_participants')}</div>
             ) : (
               <ParticipantsList participants={participants} />
             )}

@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useI18n } from '@/contexts/I18nContext'
+import { t } from '@/i18n'
 
 interface ConfigStatus {
   hasUrl: boolean
@@ -13,6 +15,7 @@ interface ConfigStatus {
 export default function ConfigCheck() {
   const [status, setStatus] = useState<ConfigStatus | null>(null)
   const [isChecking, setIsChecking] = useState(true)
+  const { locale } = useI18n()
 
   useEffect(() => {
     checkConfiguration()
@@ -70,7 +73,7 @@ export default function ConfigCheck() {
       <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
         <div className="flex items-center">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-          <span className="text-blue-800 text-sm">Checking configuration...</span>
+          <span className="text-blue-800 text-sm">{t(locale, 'cfg_checking')}</span>
         </div>
       </div>
     )
@@ -87,7 +90,7 @@ export default function ConfigCheck() {
           <svg className="h-4 w-4 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
-          <span className="text-green-800 text-sm font-medium">Supabase configuration is valid</span>
+          <span className="text-green-800 text-sm font-medium">{t(locale, 'cfg_valid')}</span>
         </div>
       </div>
     )
@@ -100,20 +103,20 @@ export default function ConfigCheck() {
           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
         </svg>
         <div className="flex-1">
-          <h3 className="text-red-800 text-sm font-medium">Supabase Configuration Issues</h3>
+          <h3 className="text-red-800 text-sm font-medium">{t(locale, 'cfg_issues_title')}</h3>
           <div className="mt-2 text-red-700 text-sm">
             <ul className="list-disc list-inside space-y-1">
               {!status.hasUrl && (
-                <li>Missing NEXT_PUBLIC_SUPABASE_URL in .env.local</li>
+                <li>{t(locale, 'cfg_missing_url')}</li>
               )}
               {!status.hasKey && (
-                <li>Missing NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local</li>
+                <li>{t(locale, 'cfg_missing_key')}</li>
               )}
               {status.hasUrl && !status.urlValid && (
-                <li>Invalid Supabase URL (should start with https:// and not contain placeholder text)</li>
+                <li>{t(locale, 'cfg_invalid_url')}</li>
               )}
               {status.hasUrl && status.hasKey && status.urlValid && !status.canConnect && (
-                <li>Cannot connect to Supabase (check your project URL and key)</li>
+                <li>{t(locale, 'cfg_cannot_connect')}</li>
               )}
               {status.error && (
                 <li>Error: {status.error}</li>
@@ -121,9 +124,7 @@ export default function ConfigCheck() {
             </ul>
           </div>
           <div className="mt-3">
-            <p className="text-red-700 text-sm">
-              Please check the <strong>SETUP.md</strong> file for detailed configuration instructions.
-            </p>
+            <p className="text-red-700 text-sm">{t(locale, 'cfg_see_setup')}</p>
           </div>
         </div>
       </div>

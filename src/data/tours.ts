@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import type { TourSummary } from '@/types/tour'
 
 export type TourFilters = {
   startDate?: string
@@ -38,20 +39,36 @@ export async function fetchTourParticipants(tourId: string) {
     .neq('status', 'cancelled')
 }
 
-export function mapTours(data: any[]): Array<{
-  id: string
-  organizer_id?: string
-  organizer_name?: string | null
-  title: string
-  start_date: string
-  end_date: string
-  price: number
-  currency: string
-  country?: string | null
-  difficulty?: string | null
-  availability_status?: string | null
-  tour_images?: { image_url: string; alt_text?: string | null }[]
-}> {
+export async function fetchTourById(tourId: string) {
+  return supabase
+    .from('tours')
+    .select(
+      `id, organizer_id, organizer_name, title, description, itinerary, start_date, end_date, price, currency, max_participants, status, country, difficulty,
+       tour_images:tour_images!tour_images_tour_id_fkey ( image_url, alt_text )`
+    )
+    .eq('id', tourId)
+    .maybeSingle()
+}
+
+export async function countBookingsForTour(tourId: string) {
+  return supabase
+    .from('bookings')
+    .select('id', { count: 'exact', head: true })
+    .eq('tour_id', tourId)
+    .neq('status', 'cancelled')
+}
+
+export async function fetchExistingBookingId(tourId: string, userId: string) {
+  return supabase
+    .from('bookings')
+    .select('id')
+    .eq('tour_id', tourId)
+    .eq('participant_id', userId)
+    .neq('status', 'cancelled')
+    .maybeSingle()
+}
+
+export function mapTours(data: any[]): TourSummary[] {
   return (data || []).map((t: any) => ({
     id: t.id,
     organizer_id: t.organizer_id,
@@ -66,6 +83,49 @@ export function mapTours(data: any[]): Array<{
     availability_status: t.availability_status,
     tour_images: t.tour_images,
   }))
+}
+
+export type TourInsertPayload = {
+  organizer_id: string
+  title: string
+  description?: string
+  start_date: string
+  end_date: string
+  price: number
+  currency: string
+  max_participants: number
+  country?: string | null
+  difficulty?: 'easy' | 'moderate' | 'challenging' | 'intense' | null
+  status: 'draft' | 'published' | 'archived'
+}
+
+export async function createTour(payload: TourInsertPayload) {
+  return supabase
+    .from('tours')
+    .insert(payload)
+    .select('id')
+    .single()
+}
+
+export type TourUpdatePayload = Partial<Omit<TourInsertPayload, 'organizer_id'>> & { status?: 'draft' | 'published' | 'archived' }
+
+export async function updateTour(tourId: string, payload: TourUpdatePayload) {
+  return supabase
+    .from('tours')
+    .update(payload)
+    .eq('id', tourId)
+}
+
+export async function deleteTour(tourId: string) {
+  return supabase.from('tours').delete().eq('id', tourId)
+}
+
+export async function fetchOrganizerTours(organizerId: string) {
+  return supabase
+    .from('tours')
+    .select('id, title, status, start_date, end_date, created_at')
+    .eq('organizer_id', organizerId)
+    .order('created_at', { ascending: false })
 }
 
 

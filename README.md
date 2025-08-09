@@ -127,6 +127,8 @@ npm run dev          # Start development server
 npm run build        # Build for production
 npm run start        # Start production server
 npm run lint         # Run ESLint
+npm run check:dead   # Detect unused files/exports/deps (knip)
+npm run check:exports # Detect unused TS exports (ts-prune)
 ```
 
 ## ☁️ Deploying to Google Cloud Run (Production)

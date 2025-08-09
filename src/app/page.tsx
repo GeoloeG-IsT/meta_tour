@@ -2,7 +2,6 @@
 
 import { useAuth } from '@/contexts/AuthContext'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { fetchMyBookedTourIds } from '@/data/bookings'
 import TourFiltersBar from '@/components/filters/TourFiltersBar'
 import { fetchPublishedTours, mapTours } from '@/data/tours'
@@ -10,6 +9,7 @@ import { SORT_OPTIONS } from '@/constants/tours'
 import { useI18n } from '@/contexts/I18nContext'
 import { t } from '@/i18n'
 import TourCard from '@/components/TourCard'
+import TourCardSkeleton from '@/components/skeletons/TourCardSkeleton'
 import Button from '@/components/ui/Button'
 import { usePaginatedList } from '@/hooks/usePaginatedList'
 import type { TourSummary } from '@/types/tour'
@@ -22,8 +22,6 @@ export default function Home() {
   type Tour = TourSummary
 
   const [tours, setTours] = useState<Tour[]>([])
-  const [toursLoading, setToursLoading] = useState(true)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [toursError, setToursError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [startDate, setStartDate] = useState('')
@@ -31,10 +29,8 @@ export default function Home() {
   const [difficulty, setDifficulty] = useState('')
   const [countries, setCountries] = useState<string[]>([])
   const [perPage, setPerPage] = useState(9)
-  const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [bookedIds, setBookedIds] = useState<string[]>([])
-  const [filtersOpen, setFiltersOpen] = useState(false)
   const [isInferring, setIsInferring] = useState(false)
   const [sort, setSort] = useState<string>('newest')
 
@@ -63,51 +59,10 @@ export default function Home() {
     return found ? { column: found.column, ascending: found.ascending } : { column: 'created_at', ascending: false }
   }
 
-  const loadPage = async (reset: boolean) => {
-    try {
-      if (reset) {
-        setToursLoading(true)
-        setToursError(null)
-        setOffset(0)
-        setHasMore(true)
-      } else {
-        setIsLoadingMore(true)
-      }
-      const from = reset ? 0 : offset
-      const to = from + perPage - 1
-      const countriesLower = countries.map((c) => c.toLowerCase())
-      console.log('[Tours] Fetch start', {
-        when: new Date().toISOString(),
-        reset,
-        filters: { startDate, endDate, difficulty, countries: countriesLower, sort },
-        pagination: { from, to, perPage, prevOffset: offset },
-      })
-      const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now()
-      const { data, error } = await fetchPublishedTours({ startDate, endDate, countries, difficulty, sort: mapSort(sort) }, { from, to })
-      const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now()
-      console.log('[Tours] Fetch end', {
-        when: new Date().toISOString(),
-        durationMs: Math.round((t1 - t0) as number),
-      })
-      if (error) throw error
-      const newItems: Tour[] = mapTours((data as any[]) || []) as Tour[]
-      setTours((prev) => (reset ? newItems : [...prev, ...newItems]))
-      const received = newItems.length
-      setOffset(from + received)
-      setHasMore(received === perPage)
-      console.log('[Tours] Page results', { received, totalNow: (reset ? newItems.length : newItems.length + tours.length), hasMore: received === perPage })
-    } catch (err) {
-      console.error('[Tours] Fetch error', err)
-      setToursError('Failed to load tours. Please try again later.')
-    } finally {
-      setToursLoading(false)
-      setIsLoadingMore(false)
-    }
-  }
+  // removed duplicate manual pagination loader; rely on usePaginatedList
 
   // Sync hook results into local state used by existing UI
   useEffect(() => { setTours(items) }, [items])
-  useEffect(() => { setToursLoading(isLoading) }, [isLoading])
   useEffect(() => { setToursError(listError || null) }, [listError])
   useEffect(() => { setHasMore(hookHasMore) }, [hookHasMore])
 
@@ -132,7 +87,7 @@ export default function Home() {
       if (f.endDate !== undefined) setEndDate(f.endDate || '')
       if (Array.isArray(f.countries)) setCountries(f.countries)
       if (f.difficulty !== undefined) setDifficulty(f.difficulty || '')
-      if (f.startDate || f.endDate || (Array.isArray(f.countries) && f.countries.length > 0) || f.difficulty) setFiltersOpen(true)
+      // If dates or countries inferred, user may want to tweak filters in the UI
       // Optional: auto-choose sort to soonest start date if dates are present
       if (f.startDate || f.endDate) setSort('start_date_asc')
     } catch {
@@ -167,20 +122,12 @@ export default function Home() {
             onClear={() => { setQuery(''); setStartDate(''); setEndDate(''); setCountries([]); setDifficulty(''); setPerPage(9); }}
           />
 
-          {toursLoading ? (
+          {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
-                <div key={i}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <div className="card p-6 animate-pulse">
-                    <div className="h-48 bg-secondary-300 rounded mb-4"></div>
-                    <div className="h-6 bg-secondary-300 rounded mb-2"></div>
-                    <div className="h-4 bg-secondary-300 rounded mb-2"></div>
-                    <div className="h-4 bg-secondary-300 rounded w-1/2"></div>
-          </div>
-        </div>
+                <TourCardSkeleton key={i} />
               ))}
-          </div>
+            </div>
           ) : toursError ? (
             <div className="text-center text-secondary-600">{toursError}</div>
           ) : tours.length === 0 ? (

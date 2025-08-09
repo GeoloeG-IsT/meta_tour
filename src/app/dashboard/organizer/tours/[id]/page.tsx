@@ -1,15 +1,22 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { useI18n } from '@/contexts/I18nContext'
+import { t } from '@/i18n'
+import { updateTour, deleteTour } from '@/data/tours'
 import ImageUploader from '@/components/ImageUploader'
+import { fetchBookingsForTour } from '@/data/bookings'
 
 type TourStatus = 'draft' | 'published' | 'archived'
 
 export default function EditTourPage() {
+  const router = useRouter()
   const [tourId, setTourId] = useState<string | null>(null)
   const { user, profile, loading } = useAuth()
+  const { locale } = useI18n()
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -39,9 +46,7 @@ export default function EditTourPage() {
     }
     if (!loading) {
       if (!user || profile?.role !== 'organizer') {
-        if (typeof window !== 'undefined') {
-          window.location.assign('/login')
-        }
+        router.push('/login')
       } else {
         void loadTour()
       }
@@ -60,9 +65,7 @@ export default function EditTourPage() {
 
       if (error) throw error
       if (!data || data.organizer_id !== user!.id) {
-        if (typeof window !== 'undefined') {
-          window.location.assign('/dashboard/organizer/tours')
-        }
+        router.push('/dashboard/organizer/tours')
         return
       }
 
@@ -77,7 +80,7 @@ export default function EditTourPage() {
       setDifficulty((data.difficulty as any) || '')
       setStatus(data.status)
     } catch (err) {
-      setError('Failed to load tour')
+      setError(t(locale, 'tour_load_failed') || 'Failed to load tour')
     }
   }
 
@@ -85,17 +88,8 @@ export default function EditTourPage() {
     if (!tourId) return
     try {
       setIsLoadingBookings(true)
-      const { data, error } = await supabase
-        .from('bookings')
-        .select(
-          `id, status, payment_status, created_at,
-           participant:users!bookings_participant_id_fkey ( id, full_name )`
-        )
-        .eq('tour_id', tourId)
-        .order('created_at', { ascending: false })
-
+      const { data, error } = await fetchBookingsForTour(tourId)
       if (error) throw error
-
       setBookings(
         (data as any[])?.map((b) => ({
           id: b.id,
@@ -125,54 +119,47 @@ export default function EditTourPage() {
     }
     try {
       setIsSaving(true)
-      const { error } = await supabase
-        .from('tours')
-        .update({
-          title,
-          description,
-          start_date: startDate,
-          end_date: endDate,
-          price: Number(price),
-          currency,
-          max_participants: Number(maxParticipants),
-          country: country || null,
-          difficulty: difficulty || null,
-          status,
-        })
-        .eq('id', tourId)
+      const { error } = await updateTour(tourId, {
+        title,
+        description,
+        start_date: startDate,
+        end_date: endDate,
+        price: Number(price),
+        currency,
+        max_participants: Number(maxParticipants),
+        country: country || null,
+        difficulty: (difficulty || null) as any,
+        status: status as 'draft' | 'published' | 'archived',
+      })
 
       if (error) throw error
     } catch (err) {
-      setError('Failed to save tour')
+      setError(t(locale, 'tour_save_failed') || 'Failed to save tour')
       return
     } finally {
       setIsSaving(false)
     }
 
-    if (typeof window !== 'undefined') {
-      window.location.assign('/dashboard/organizer/tours')
-    }
+    router.push('/dashboard/organizer/tours')
   }
 
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this tour? This action cannot be undone.')) return
     try {
       if (!tourId) return
-      const { error } = await supabase.from('tours').delete().eq('id', tourId)
+      const { error } = await deleteTour(tourId)
       if (error) throw error
-      if (typeof window !== 'undefined') {
-        window.location.assign('/dashboard/organizer/tours')
-      }
+      router.push('/dashboard/organizer/tours')
     } catch (err) {
-      setError('Failed to delete tour')
+      setError(t(locale, 'tour_delete_failed') || 'Failed to delete tour')
     }
   }
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-secondary-900">Edit Tour</h1>
-        <button onClick={handleDelete} className="btn-error">Delete</button>
+        <h1 className="text-2xl font-bold text-secondary-900">{t(locale, 'org_edit_title')}</h1>
+        <button onClick={handleDelete} className="btn-error">{t(locale, 'org_delete')}</button>
       </div>
 
       {error && (
@@ -181,33 +168,33 @@ export default function EditTourPage() {
 
       <form onSubmit={handleSave} className="space-y-6">
         <div>
-          <label className="form-label">Title</label>
+          <label className="form-label">{t(locale, 'org_field_title')}</label>
           <input className="form-input" value={title} onChange={(e) => setTitle(e.target.value)} required />
         </div>
 
         <div>
-          <label className="form-label">Description</label>
+          <label className="form-label">{t(locale, 'org_field_description')}</label>
           <textarea className="form-input" rows={6} value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="form-label">Start Date</label>
+            <label className="form-label">{t(locale, 'org_field_start_date')}</label>
             <input type="date" className="form-input" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
           </div>
           <div>
-            <label className="form-label">End Date</label>
+            <label className="form-label">{t(locale, 'org_field_end_date')}</label>
             <input type="date" className="form-input" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="form-label">Price</label>
+            <label className="form-label">{t(locale, 'org_field_price')}</label>
             <input type="number" min={0} step="0.01" className="form-input" value={price} onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))} required />
           </div>
           <div>
-            <label className="form-label">Currency</label>
+            <label className="form-label">{t(locale, 'org_field_currency')}</label>
             <select className="form-input" value={currency} onChange={(e) => setCurrency(e.target.value)}>
               <option value="USD">USD</option>
               <option value="EUR">EUR</option>
@@ -218,11 +205,11 @@ export default function EditTourPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="form-label">Max Participants</label>
+            <label className="form-label">{t(locale, 'org_field_max_participants')}</label>
             <input type="number" min={1} className="form-input" value={maxParticipants} onChange={(e) => setMaxParticipants(e.target.value === '' ? '' : Number(e.target.value))} required />
           </div>
           <div>
-            <label className="form-label">Status</label>
+            <label className="form-label">{t(locale, 'org_field_status')}</label>
             <select className="form-input" value={status} onChange={(e) => setStatus(e.target.value as TourStatus)}>
               <option value="draft">Draft</option>
               <option value="published">Published</option>
@@ -233,29 +220,29 @@ export default function EditTourPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="form-label">Country</label>
+            <label className="form-label">{t(locale, 'org_field_country')}</label>
             <input className="form-input" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="e.g., Nepal" />
           </div>
           <div>
-            <label className="form-label">Difficulty</label>
+            <label className="form-label">{t(locale, 'org_field_difficulty')}</label>
             <select className="form-input" value={difficulty} onChange={(e) => setDifficulty(e.target.value as any)}>
-              <option value="">Select difficulty</option>
-              <option value="easy">Easy</option>
-              <option value="moderate">Moderate</option>
-              <option value="challenging">Challenging</option>
-              <option value="intense">Intense</option>
+              <option value="">{t(locale, 'select_difficulty')}</option>
+              <option value="easy">{t(locale, 'difficulty_easy')}</option>
+              <option value="moderate">{t(locale, 'difficulty_moderate')}</option>
+              <option value="challenging">{t(locale, 'difficulty_challenging')}</option>
+              <option value="intense">{t(locale, 'difficulty_intense')}</option>
             </select>
           </div>
         </div>
 
         <div className="flex justify-end gap-3">
-          <a href="/dashboard/organizer/tours" className="btn-secondary">Cancel</a>
-          <button type="submit" className="btn-primary" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</button>
+          <a href="/dashboard/organizer/tours" className="btn-secondary">{t(locale, 'org_cancel')}</a>
+          <button type="submit" className="btn-primary" disabled={isSaving}>{isSaving ? t(locale, 'org_saving') : t(locale, 'org_save_changes')}</button>
         </div>
       </form>
 
       <div className="mt-10">
-        <h2 className="text-xl font-semibold text-secondary-900 mb-4">Images</h2>
+        <h2 className="text-xl font-semibold text-secondary-900 mb-4">{t(locale, 'org_images_title')}</h2>
         {tourId && (
           <ImageUploader tourId={tourId} onUploadComplete={() => { /* no-op, user can refresh section */ }} />
         )}
@@ -263,24 +250,24 @@ export default function EditTourPage() {
 
       <div className="mt-10">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-secondary-900">Bookings</h2>
+          <h2 className="text-xl font-semibold text-secondary-900">{t(locale, 'org_bookings_title')}</h2>
           <button className="btn-secondary" onClick={loadBookings} disabled={isLoadingBookings}>
-            {isLoadingBookings ? 'Refreshing...' : 'Refresh'}
+            {isLoadingBookings ? t(locale, 'org_bookings_refreshing') : t(locale, 'org_bookings_refresh')}
           </button>
         </div>
         {isLoadingBookings ? (
-          <div className="text-secondary-600">Loading bookings...</div>
+          <div className="text-secondary-600">{t(locale, 'org_bookings_loading')}</div>
         ) : bookings.length === 0 ? (
-          <div className="text-secondary-700">No bookings yet.</div>
+          <div className="text-secondary-700">{t(locale, 'org_bookings_empty')}</div>
         ) : (
           <div className="overflow-x-auto border border-gray-200 rounded-lg">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Participant</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t(locale, 'org_tbl_participant')}</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t(locale, 'org_tbl_status')}</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t(locale, 'org_tbl_payment')}</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t(locale, 'org_tbl_created')}</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">

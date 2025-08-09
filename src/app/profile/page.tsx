@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { updateUserProfile } from '@/data/users'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useI18n } from '@/contexts/I18nContext'
 import { supportedLocales, type Locale } from '@/i18n/config'
@@ -37,7 +38,7 @@ export default function MyProfilePage() {
     }
   }, [loading, user, profile])
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+  if (loading) return <div className="min-h-screen flex items-center justify-center">{t(locale, 'common_loading')}</div>
   if (!user) return null
 
   const handleSave = async (e: React.FormEvent) => {
@@ -49,14 +50,13 @@ export default function MyProfilePage() {
       const safetyTimer = setTimeout(() => {
         // Safety fallback in case network hangs
         setSaving(false)
-        setMessage('Profile update submitted. It may take a moment to reflect.')
+        setMessage(t(locale, 'profile_update_submitted'))
       }, 10000)
       // Update users table (full_name, bio)
-      const { error: upErr } = await supabase
-        .from('users')
-        .update({ full_name: fullName, bio, language: locale })
-        .eq('id', user.id)
+      const { error: upErr } = await updateUserProfile(user.id, { full_name: fullName, bio, avatar_url: profile?.avatar_url || undefined })
       if (upErr) throw upErr
+      // persist language separately to avoid changing avatar_url unintentionally
+      await supabase.from('users').update({ language: locale }).eq('id', user.id)
       // Update auth email if changed
       if (email && email !== user.email) {
         const { error: authErr } = await supabase.auth.updateUser({ email })
@@ -77,11 +77,11 @@ export default function MyProfilePage() {
     setMessage(null)
     setError(null)
     if (!newPassword || newPassword.length < 8) {
-      setError('Password must be at least 8 characters')
+      setError(t(locale, 'error_password_min'))
       return
     }
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match')
+      setError(t(locale, 'error_password_mismatch'))
       return
     }
     try {
@@ -125,7 +125,7 @@ export default function MyProfilePage() {
                 {profile?.avatar_url ? (
                   <Image src={profile.avatar_url} alt="Avatar" fill sizes="64px" className="object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-secondary-500 text-sm">No img</div>
+                  <div className="w-full h-full flex items-center justify-center text-secondary-500 text-sm">{t(locale, 'profile_no_img')}</div>
                 )}
               </div>
               <label className="btn-secondary">
@@ -142,15 +142,15 @@ export default function MyProfilePage() {
                       const { error: updateErr } = await supabase.from('users').update({ avatar_url: newUrl }).eq('id', user.id)
                       if (updateErr) throw updateErr
                       await reloadProfile()
-                      setMessage('Avatar updated')
+                       setMessage(t(locale, 'avatar_updated'))
                     } catch (e: any) {
-                      setError(e?.message || 'Failed to upload avatar')
+                       setError(e?.message || t(locale, 'avatar_upload_failed'))
                     } finally {
                       setUploading(false)
                     }
                   }}
                 />
-                {uploading ? 'Uploading…' : t(locale, 'profile_upload')}
+                 {uploading ? t(locale, 'uploading') : t(locale, 'profile_upload')}
               </label>
             </div>
           </div>
@@ -158,7 +158,7 @@ export default function MyProfilePage() {
 
         <div>
           <label className="form-label">{t(locale, 'profile_bio')}</label>
-          <textarea className="form-input min-h-[120px]" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell others about yourself" />
+          <textarea className="form-input min-h-[120px]" value={bio} onChange={(e) => setBio(e.target.value)} placeholder={t(locale, 'profile_bio_placeholder')} />
         </div>
 
         <div>

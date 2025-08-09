@@ -5,6 +5,8 @@ import { useI18n } from '@/contexts/I18nContext'
 import { supportedLocales, type Locale } from '@/i18n/config'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { debug } from '@/lib/api'
+import { fetchUserProfile as fetchUserProfileApi } from '@/data/users'
 
 interface UserProfile {
   id: string
@@ -37,11 +39,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { setLocale } = useI18n()
 
   useEffect(() => {
-    console.log('AuthContext: useEffect triggered')
+    debug('AuthContext: useEffect triggered')
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('AuthContext: getSession', session)
+      debug('AuthContext: getSession', session)
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
@@ -70,25 +72,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
 
     return () => {
-      console.log('AuthContext: unsubscribing from auth changes')
+      debug('AuthContext: unsubscribing from auth changes')
       subscription.unsubscribe()
     }
   }, [])
 
   const fetchUserProfile = async (userId: string) => {
-    console.log('AuthContext: fetchUserProfile', userId)
+    debug('AuthContext: fetchUserProfile', userId)
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single()
+      const { data, error } = await fetchUserProfileApi(userId)
 
       if (error) {
         console.error('AuthContext: Error fetching user profile:', error)
         setProfile(null) // Clear profile on error
       } else {
-        console.log('AuthContext: Profile data:', data)
+        debug('AuthContext: Profile data:', data)
         setProfile(data)
         if (data?.language && (supportedLocales as readonly string[]).includes(data.language)) {
           setLocale(data.language as Locale)
@@ -98,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('AuthContext: Error fetching user profile:', error)
       setProfile(null) // Clear profile on error
     } finally {
-      console.log('AuthContext: fetchUserProfile finished')
+      debug('AuthContext: fetchUserProfile finished')
       setLoading(false)
     }
   }

@@ -5,8 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import ConfigCheck from '@/components/ConfigCheck'
+import { useI18n } from '@/contexts/I18nContext'
+import { t } from '@/i18n'
 
 function LoginContent() {
+  const { locale } = useI18n()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -68,12 +71,8 @@ function LoginContent() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Welcome back to SoulTrip
-          </p>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">{t(locale, 'login_title')}</h2>
+          <p className="mt-2 text-center text-sm text-gray-600">{t(locale, 'login_subtitle')}</p>
         </div>
         
         <ConfigCheck />
@@ -81,9 +80,7 @@ function LoginContent() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email Address
-              </label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">{t(locale, 'login_email')}</label>
               <input
                 id="email"
                 name="email"
@@ -98,9 +95,7 @@ function LoginContent() {
             </div>
             
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">{t(locale, 'login_password')}</label>
               <input
                 id="password"
                 name="password"
@@ -133,17 +128,15 @@ function LoginContent() {
               disabled={isLoading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Signing In...' : 'Sign In'}
+              {isLoading ? t(locale, 'common_loading') : t(locale, 'login_sign_in')}
             </button>
           </div>
 
           <div className="text-center">
-            <span className="text-sm text-gray-600">
-              Don&apos;t have an account?{' '}
-              <Link href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
-                Create one here
-              </Link>
-            </span>
+              <span className="text-sm text-gray-600">
+                {t(locale, 'login_no_account')}{' '}
+                <Link href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">{t(locale, 'login_create_here')}</Link>
+              </span>
           </div>
         </form>
       </div>

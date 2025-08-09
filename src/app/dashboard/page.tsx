@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useI18n } from '@/contexts/I18nContext'
 import { t } from '@/i18n'
-import Button from '@/components/ui/Button'
 import { debug } from '@/lib/api'
+import Button from '@/components/ui/Button'
 
 export default function DashboardPage() {
   const { user, profile, loading, signOut } = useAuth()
@@ -94,18 +94,14 @@ export default function DashboardPage() {
                     <>
                       <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg">
                         <h4 className="font-medium text-indigo-900 dark:text-indigo-300">{t(locale, 'action_create_tour')}</h4>
-                        <p className="text-sm text-indigo-700 dark:text-indigo-300/80 mt-1">
-                          Start organizing your next spiritual journey
-                        </p>
+                        <p className="text-sm text-indigo-700 dark:text-indigo-300/80 mt-1">{t(locale, 'dash_org_create_desc')}</p>
                         <Button variant="secondary" onClick={() => router.push('/dashboard/organizer/tours/new')} className="mt-2 text-sm">
                           {t(locale, 'action_create_tour')} →
                         </Button>
                       </div>
                       <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
                         <h4 className="font-medium text-green-900 dark:text-green-300">{t(locale, 'action_manage_tours')}</h4>
-                        <p className="text-sm text-green-700 dark:text-green-300/80 mt-1">
-                          View and edit your existing tours
-                        </p>
+                        <p className="text-sm text-green-700 dark:text-green-300/80 mt-1">{t(locale, 'dash_org_manage_desc')}</p>
                         <Button variant="secondary" onClick={() => router.push('/dashboard/organizer/tours')} className="mt-2 text-sm">
                           {t(locale, 'action_manage_tours')} →
                         </Button>

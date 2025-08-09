@@ -5,8 +5,11 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import ConfigCheck from '@/components/ConfigCheck'
+import { useI18n } from '@/contexts/I18nContext'
+import { t } from '@/i18n'
 
 export default function SignUpPage() {
+  const { locale } = useI18n()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
@@ -54,12 +57,8 @@ export default function SignUpPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Join SoulTrip to discover transformative spiritual journeys
-          </p>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">{t(locale, 'signup_title')}</h2>
+          <p className="mt-2 text-center text-sm text-gray-600">{t(locale, 'signup_subtitle')}</p>
         </div>
         
         <ConfigCheck />
@@ -67,9 +66,7 @@ export default function SignUpPage() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">{t(locale, 'signup_full_name')}</label>
               <input
                 id="fullName"
                 name="fullName"
@@ -83,9 +80,7 @@ export default function SignUpPage() {
             </div>
             
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email Address
-              </label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">{t(locale, 'signup_email')}</label>
               <input
                 id="email"
                 name="email"
@@ -100,9 +95,7 @@ export default function SignUpPage() {
             </div>
             
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">{t(locale, 'signup_password')}</label>
               <input
                 id="password"
                 name="password"
@@ -117,9 +110,7 @@ export default function SignUpPage() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                I want to join as:
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t(locale, 'signup_join_as')}</label>
               <div className="space-y-2">
                 <label className="flex items-center">
                   <input
@@ -130,9 +121,7 @@ export default function SignUpPage() {
                     onChange={(e) => setRole(e.target.value as 'participant' | 'organizer')}
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
                   />
-                  <span className="ml-2 text-sm text-gray-700">
-                    <strong>Participant</strong> - I want to book and join spiritual journeys
-                  </span>
+                  <span className="ml-2 text-sm text-gray-700">{t(locale, 'signup_role_participant')}</span>
                 </label>
                 <label className="flex items-center">
                   <input
@@ -143,9 +132,7 @@ export default function SignUpPage() {
                     onChange={(e) => setRole(e.target.value as 'participant' | 'organizer')}
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
                   />
-                  <span className="ml-2 text-sm text-gray-700">
-                    <strong>Organizer</strong> - I want to create and organize spiritual tours
-                  </span>
+                  <span className="ml-2 text-sm text-gray-700">{t(locale, 'signup_role_organizer')}</span>
                 </label>
               </div>
             </div>
@@ -163,17 +150,15 @@ export default function SignUpPage() {
               disabled={isLoading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Creating Account...' : 'Create Account'}
+              {isLoading ? t(locale, 'common_loading') : t(locale, 'signup_create_account')}
             </button>
           </div>
 
           <div className="text-center">
-            <span className="text-sm text-gray-600">
-              Already have an account?{' '}
-              <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-                Sign in here
-              </Link>
-            </span>
+              <span className="text-sm text-gray-600">
+                {t(locale, 'signup_have_account')}{' '}
+                <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">{t(locale, 'signup_sign_in_here')}</Link>
+              </span>
           </div>
         </form>
       </div>

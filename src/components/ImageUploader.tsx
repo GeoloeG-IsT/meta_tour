@@ -3,6 +3,8 @@
 import { useState, useRef } from 'react'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
+import { useI18n } from '@/contexts/I18nContext'
+import { t } from '@/i18n'
 
 interface ImageUploaderProps {
   tourId: string
@@ -16,6 +18,7 @@ interface ImagePreview {
 }
 
 export default function ImageUploader({ tourId, onUploadComplete }: ImageUploaderProps) {
+  const { locale } = useI18n()
   const [selectedImages, setSelectedImages] = useState<ImagePreview[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({})
@@ -38,13 +41,13 @@ export default function ImageUploader({ tourId, onUploadComplete }: ImageUploade
     Array.from(files).forEach(file => {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        setError('Please select only image files')
+        setError(t(locale, 'iu_only_images'))
         return
       }
 
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        setError('Images must be smaller than 5MB')
+        setError(t(locale, 'iu_max_size'))
         return
       }
 
@@ -69,7 +72,7 @@ export default function ImageUploader({ tourId, onUploadComplete }: ImageUploade
 
   const uploadImages = async () => {
     if (selectedImages.length === 0) {
-      setError('Please select at least one image to upload')
+      setError(t(locale, 'iu_select_at_least_one'))
       return
     }
 
@@ -164,9 +167,7 @@ export default function ImageUploader({ tourId, onUploadComplete }: ImageUploade
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Upload Tour Images
-        </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">{t(locale, 'iu_title')}</label>
         
         {/* File Input */}
         <div className="flex items-center space-x-4">
@@ -181,9 +182,7 @@ export default function ImageUploader({ tourId, onUploadComplete }: ImageUploade
           />
         </div>
         
-        <p className="mt-1 text-xs text-gray-500">
-          Select up to 10 images (max 5MB each). Supported formats: JPG, PNG, GIF, WebP
-        </p>
+        <p className="mt-1 text-xs text-gray-500">{t(locale, 'iu_hint')}</p>
       </div>
 
       {/* Error Message */}
@@ -280,10 +279,10 @@ export default function ImageUploader({ tourId, onUploadComplete }: ImageUploade
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Uploading...
+                {t(locale, 'iu_uploading')}
               </>
             ) : (
-              `Upload ${selectedImages.length} Image${selectedImages.length > 1 ? 's' : ''}`
+              `${t(locale, 'iu_upload_cta')} ${selectedImages.length} Image${selectedImages.length > 1 ? 's' : ''}`
             )}
           </button>
         </div>
