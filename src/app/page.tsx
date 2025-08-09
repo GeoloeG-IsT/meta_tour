@@ -14,105 +14,109 @@ export default function Home() {
 
   const [tours, setTours] = useState<Tour[]>([])
   const [toursLoading, setToursLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [toursError, setToursError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [country, setCountry] = useState('')
   const [difficulty, setDifficulty] = useState('')
+  const [perPage, setPerPage] = useState(9)
+  const [offset, setOffset] = useState(0)
+  const [hasMore, setHasMore] = useState(true)
   const [bookedIds, setBookedIds] = useState<string[]>([])
 
-
+  // Load booked ids once per user
   useEffect(() => {
-    async function fetchTours() {
+    async function loadBooked() {
       try {
+        if (!user) { setBookedIds([]); return }
+        const { data: myBookings } = await supabase
+          .from('bookings')
+          .select('tour_id')
+          .eq('participant_id', user.id)
+          .neq('status', 'cancelled')
+        setBookedIds((myBookings || []).map((b: any) => b.tour_id))
+      } catch {}
+    }
+    void loadBooked()
+  }, [user])
+
+  const buildQuery = () => {
+    let qb = supabase
+      .from('tours')
+      .select(`
+        id,
+        organizer_id,
+        organizer_name,
+        title,
+        start_date,
+        end_date,
+        price,
+        currency,
+        country,
+        difficulty,
+        availability_status,
+        tour_images:tour_images!tour_images_tour_id_fkey (
+          image_url,
+          alt_text
+        )
+      `)
+      .eq('status', 'published')
+      .order('created_at', { ascending: false })
+
+    if (query.trim()) qb = qb.ilike('title', `%${query}%`)
+    if (startDate) qb = qb.gte('start_date', startDate)
+    if (endDate) qb = qb.lte('end_date', endDate)
+    if (country.trim()) qb = qb.ilike('country', `%${country}%`)
+    if (difficulty) qb = qb.eq('difficulty', difficulty)
+    return qb
+  }
+
+  const loadPage = async (reset: boolean) => {
+    try {
+      if (reset) {
         setToursLoading(true)
         setToursError(null)
-        const { data, error } = await supabase
-          .from('tours')
-          .select(`
-            id,
-            organizer_id,
-            organizer_name,
-            title,
-            start_date,
-            end_date,
-            price,
-            currency,
-            country,
-            difficulty,
-            availability_status,
-            tour_images:tour_images!tour_images_tour_id_fkey (
-              image_url,
-              alt_text
-            )
-          `)
-          .eq('status', 'published')
-          .order('created_at', { ascending: false })
-
-        if (error) throw error
-
-        let baseTours = (data as any[]) || []
-
-        // Fetch user's booked tour IDs to compute "booked" status
-        let bookedTourIds = new Set<string>()
-        if (user) {
-          const { data: myBookings } = await supabase
-            .from('bookings')
-            .select('tour_id')
-            .eq('participant_id', user.id)
-            .neq('status', 'cancelled')
-
-          if (myBookings) {
-            bookedTourIds = new Set(myBookings.map((b: any) => b.tour_id))
-          }
-        }
-        setBookedIds(Array.from(bookedTourIds))
-
-        let items: Tour[] = baseTours.map((t: any) => {
-          const computed: Tour = {
-            id: t.id,
-            organizer_id: t.organizer_id,
-            organizer_name: t.organizer_name,
-            title: t.title,
-            start_date: t.start_date,
-            end_date: t.end_date,
-            price: t.price,
-            currency: t.currency,
-            country: t.country,
-            difficulty: t.difficulty,
-            availability_status: t.availability_status,
-            tour_images: t.tour_images,
-          }
-          return computed
-        })
-        if (query.trim()) {
-          const q = query.toLowerCase()
-          items = items.filter((t) => t.title.toLowerCase().includes(q))
-        }
-        if (startDate) {
-          items = items.filter((t) => new Date(t.start_date) >= new Date(startDate))
-        }
-        if (endDate) {
-          items = items.filter((t) => new Date(t.end_date) <= new Date(endDate))
-        }
-        if (country.trim()) {
-          const c = country.toLowerCase()
-          items = items.filter((t) => (t.country || '').toLowerCase().includes(c))
-        }
-        if (difficulty) {
-          items = items.filter((t) => (t.difficulty || '') === difficulty)
-        }
-        setTours(items)
-      } catch (err) {
-        setToursError('Failed to load tours. Please try again later.')
-      } finally {
-        setToursLoading(false)
+        setOffset(0)
+        setHasMore(true)
+      } else {
+        setIsLoadingMore(true)
       }
+      const from = reset ? 0 : offset
+      const to = from + perPage - 1
+      const { data, error } = await buildQuery().range(from, to)
+      if (error) throw error
+      const newItems: Tour[] = ((data as any[]) || []).map((t) => ({
+        id: t.id,
+        organizer_id: t.organizer_id,
+        organizer_name: t.organizer_name,
+        title: t.title,
+        start_date: t.start_date,
+        end_date: t.end_date,
+        price: t.price,
+        currency: t.currency,
+        country: t.country,
+        difficulty: t.difficulty,
+        availability_status: t.availability_status,
+        tour_images: t.tour_images,
+      }))
+      setTours((prev) => (reset ? newItems : [...prev, ...newItems]))
+      const received = newItems.length
+      setOffset(from + received)
+      setHasMore(received === perPage)
+    } catch (err) {
+      setToursError('Failed to load tours. Please try again later.')
+    } finally {
+      setToursLoading(false)
+      setIsLoadingMore(false)
     }
-    fetchTours()
+  }
+
+  useEffect(() => {
+    void loadPage(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, startDate, endDate, country, difficulty, user])
+  }, [query, startDate, endDate, country, difficulty, perPage])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -122,7 +126,7 @@ export default function Home() {
         {/* Filters + Tours grid */}
         <div className="w-full max-w-7xl mx-auto">
           <div className="card p-4 mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
               <div>
                 <label className="form-label">Search</label>
                 <input className="form-input" placeholder="Search by title" value={query} onChange={(e) => setQuery(e.target.value)} />
@@ -134,7 +138,7 @@ export default function Home() {
               <div>
                 <label className="form-label">End Before</label>
                 <input type="date" className="form-input" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-              </div>
+            </div>
                 <div>
                   <label className="form-label">Country</label>
                   <input className="form-input" placeholder="e.g., Nepal" value={country} onChange={(e) => setCountry(e.target.value)} />
@@ -149,8 +153,17 @@ export default function Home() {
                     <option value="intense">Intense</option>
                   </select>
                 </div>
-              <div className="flex items-end">
-                <button className="btn-secondary w-full" onClick={() => { setQuery(''); setStartDate(''); setEndDate(''); setCountry(''); setDifficulty(''); }}>Clear Filters</button>
+                <div>
+                  <label className="form-label">Per Page</label>
+                  <select className="form-input" value={perPage} onChange={(e) => setPerPage(Number(e.target.value))}>
+                    <option value={6}>6</option>
+                    <option value={9}>9</option>
+                    <option value={12}>12</option>
+                    <option value={18}>18</option>
+                  </select>
+            </div>
+                <div className="flex items-end">
+                  <button className="btn-secondary w-full" onClick={() => { setQuery(''); setStartDate(''); setEndDate(''); setCountry(''); setDifficulty(''); setPerPage(9); }}>Clear Filters</button>
           </div>
         </div>
           </div>
@@ -171,16 +184,25 @@ export default function Home() {
           ) : tours.length === 0 ? (
             <div className="text-center text-secondary-600">No tours available</div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {tours.map((tour) => (
-              <TourCard
-                key={tour.id}
-                tour={tour}
-                status={tour.availability_status}
-                isBooked={user ? bookedIds.includes(tour.id) : false}
-              />
-              ))}
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {tours.map((tour) => (
+                  <TourCard
+                    key={tour.id}
+                    tour={tour}
+                    status={tour.availability_status}
+                    isBooked={user ? bookedIds.includes(tour.id) : false}
+                  />
+                ))}
+              </div>
+              {hasMore && (
+                <div className="mt-8 flex justify-center">
+                  <button className="btn-secondary" onClick={() => void loadPage(false)} disabled={isLoadingMore}>
+                    {isLoadingMore ? 'Loading…' : 'Load More'}
+                  </button>
           </div>
+              )}
+            </>
           )}
         </div>
       </main>
