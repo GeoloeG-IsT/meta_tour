@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { fetchMyBookings } from '@/data/bookings'
 import BookingCard from '@/components/BookingCard'
+import { useI18n } from '@/contexts/I18nContext'
+import { t } from '@/i18n'
 
 interface BookingRow {
   id: string
@@ -15,6 +17,7 @@ interface BookingRow {
 
 export default function MyBookingsPage() {
   const { user, profile, loading } = useAuth()
+  const { locale } = useI18n()
   const [bookings, setBookings] = useState<BookingRow[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -72,14 +75,14 @@ export default function MyBookingsPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-secondary-900">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-secondary-900">My Bookings</h1>
-      </div>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-secondary-900">{t(locale, 'bookings_title')}</h1>
+        </div>
 
       {error && <div className="text-error-700 mb-4">{error}</div>}
 
       {bookings.length === 0 ? (
-        <div className="text-secondary-700">You have no bookings yet.</div>
+        <div className="text-secondary-700">{t(locale, 'bookings_empty')}</div>
       ) : (
         <div className="space-y-4">
           {bookings.map((b) => (

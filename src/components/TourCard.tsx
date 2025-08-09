@@ -2,6 +2,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import type { TourSummary } from '@/types/tour'
 import { formatShortDate, formatPrice } from '@/lib/format'
+import { useI18n } from '@/contexts/I18nContext'
+import { t } from '@/i18n'
 
 interface TourCardProps {
   tour: TourSummary
@@ -10,12 +12,13 @@ interface TourCardProps {
 }
 
 export default function TourCard({ tour, status = 'available', isBooked = false }: TourCardProps) {
+  const { locale } = useI18n()
   // Get the first image as thumbnail or use a placeholder
   const thumbnailImage = tour.tour_images?.[0]
   const thumbnailUrl = thumbnailImage?.image_url || '/placeholder-tour.jpg'
   const altText = thumbnailImage?.alt_text || `${tour.title} tour image`
 
-  const formatDate = (dateString: string) => formatShortDate(dateString)
+  const formatDate = (dateString: string) => formatShortDate(dateString, locale)
 
   return (
     <div className="group">
@@ -30,10 +33,10 @@ export default function TourCard({ tour, status = 'available', isBooked = false 
                 (status === 'sold_out' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800')
               }
             >
-              {status === 'sold_out' ? 'Sold out' : 'Available'}
+              {status === 'sold_out' ? t(locale, 'tour_sold_out') : t(locale, 'tour_available')}
             </span>
             {isBooked && (
-              <span className="px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">Booked</span>
+              <span className="px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">{t(locale, 'booked')}</span>
             )}
           </div>
           <Image
@@ -61,7 +64,7 @@ export default function TourCard({ tour, status = 'available', isBooked = false 
             )}
             {tour.difficulty && (
               <span className="inline-flex items-center px-2 py-0.5 rounded bg-secondary-100 text-secondary-800 capitalize">
-                {tour.difficulty}
+                {t(locale, tour.difficulty)}
               </span>
             )}
           </div>
@@ -79,19 +82,19 @@ export default function TourCard({ tour, status = 'available', isBooked = false 
 
           {tour.organizer_id && (
             <div className="mb-3 text-sm">
-              <span className="text-secondary-500 mr-1">Organizer:</span>
+              <span className="text-secondary-500 mr-1">{t(locale, 'tour_organizer')}</span>
               <Link href={`/profile/${tour.organizer_id}`} className="text-indigo-600 hover:text-indigo-500">
-                {tour.organizer_name || 'View profile'}
+                {tour.organizer_name || t(locale, 'view_profile')}
               </Link>
             </div>
           )}
           
           <div className="flex items-center justify-between">
             <div className="text-2xl font-bold text-primary-600">
-              {formatPrice(tour.price, tour.currency)}
+              {formatPrice(tour.price, tour.currency, locale)}
             </div>
             <div className="text-sm text-secondary-500">
-              per person
+              {t(locale, 'tour_per_person')}
             </div>
           </div>
         </div>

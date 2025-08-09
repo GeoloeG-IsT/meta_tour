@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import ParticipantsList from '@/components/participants/ParticipantsList'
 import { formatDisplayDate, formatPrice } from '@/lib/format'
+import { useI18n } from '@/contexts/I18nContext'
+import { t } from '@/i18n'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { fetchTourParticipants } from '@/data/tours'
@@ -17,6 +19,7 @@ export default function TourDetailsPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const { user, profile, loading } = useAuth()
+  const { locale } = useI18n()
 
   const [tour, setTour] = useState<Tour | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -241,7 +244,7 @@ export default function TourDetailsPage() {
     }
   }
 
-  const formatDate = (dateString: string) => formatDisplayDate(dateString)
+  const formatDate = (dateString: string) => formatDisplayDate(dateString, locale)
 
   if (isLoading) {
     return (
@@ -280,7 +283,7 @@ export default function TourDetailsPage() {
         <div className="flex flex-col md:flex-row md:items-start md:space-x-8">
           <div className="flex-1">
             <div className="mb-2">
-              <Link href="/tours" className="text-sm text-indigo-600 hover:text-indigo-500">&larr; My tours</Link>
+              <Link href="/tours" className="text-sm text-indigo-600 hover:text-indigo-500">&larr; {t(locale, 'tour_my_tours_back')}</Link>
             </div>
             <h1 className="text-3xl font-bold text-secondary-900">{tour.title}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
@@ -295,7 +298,7 @@ export default function TourDetailsPage() {
                 </span>
               )}
               <span className="text-secondary-500">•</span>
-              <span className="text-secondary-600">By</span>
+              <span className="text-secondary-600">{t(locale, 'tour_by')}</span>
               <Link href={`/profile/${tour.organizer_id}`} className="text-indigo-600 hover:text-indigo-500">
                 {tour.organizer_name || 'Organizer profile'}
               </Link>
@@ -323,7 +326,7 @@ export default function TourDetailsPage() {
           <aside className="w-full md:w-80 mt-8 md:mt-0">
             <div className="card p-6">
               <div className="text-3xl font-bold text-primary-600">{formatPrice(tour.price, tour.currency)}</div>
-              <div className="text-sm text-secondary-600 mt-1">per person</div>
+              <div className="text-sm text-secondary-600 mt-1">{t(locale, 'tour_per_person')}</div>
               <div className="mt-4 text-sm text-secondary-700">
                 <span className="font-medium">Capacity:</span>{' '}
                 {currentBookingsCount}/{tour.max_participants} {isSoldOut && <span className="text-error-600 font-medium">(Sold out)</span>}
@@ -337,21 +340,21 @@ export default function TourDetailsPage() {
 
               <div className="mt-6">
                 {!user ? (
-                  <button onClick={() => router.push(`/login?redirect=${encodeURIComponent(`/tours/${tourId}`)}`)} className="btn-primary w-full">Sign in to Book</button>
+                  <button onClick={() => router.push(`/login?redirect=${encodeURIComponent(`/tours/${tourId}`)}`)} className="btn-primary w-full">{t(locale, 'tour_sign_in_to_book')}</button>
                 ) : profile?.role !== 'participant' ? (
-                  <button disabled className="btn-secondary w-full">Only participants can book</button>
+                  <button disabled className="btn-secondary w-full">{t(locale, 'tour_only_participants')}</button>
                 ) : userBookingId ? (
                   <div className="flex flex-col sm:flex-row gap-2">
                     <button onClick={() => router.push(`/bookings/${userBookingId}`)} className="btn-secondary flex-1">View Booking</button>
                     <button onClick={handleCancelBooking} disabled={isCancelling} className="btn-secondary flex-1">
-                      {isCancelling ? 'Cancelling…' : 'Cancel Booking'}
+                      {isCancelling ? 'Cancelling…' : t(locale, 'tour_cancel_booking')}
                     </button>
                   </div>
                 ) : isSoldOut ? (
-                  <button disabled className="btn-secondary w-full">Sold Out</button>
+                  <button disabled className="btn-secondary w-full">{t(locale, 'tour_sold_out')}</button>
                 ) : (
                   <button onClick={handleBook} disabled={isBooking} className="btn-primary w-full">
-                    {isBooking ? 'Booking...' : 'Book Now'}
+                    {isBooking ? 'Booking...' : t(locale, 'tour_book_now')}
                   </button>
                 )}
               </div>
@@ -365,7 +368,7 @@ export default function TourDetailsPage() {
 
         {tour.tour_images && tour.tour_images.length > 1 && (
           <div className="mt-10">
-            <h2 className="text-xl font-semibold text-secondary-900 mb-4">Gallery</h2>
+            <h2 className="text-xl font-semibold text-secondary-900 mb-4">{t(locale, 'tour_gallery')}</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {tour.tour_images.slice(1).map((img, idx) => (
                 <div key={idx} className="relative w-full h-40 bg-secondary-100">

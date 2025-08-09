@@ -1,6 +1,8 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
+import { useI18n } from '@/contexts/I18nContext'
+import { supportedLocales, type Locale } from '@/i18n/config'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 
@@ -9,6 +11,7 @@ interface UserProfile {
   full_name: string | null
   avatar_url: string | null
   bio: string | null
+    language: string | null
   role: 'participant' | 'organizer' | 'admin'
   created_at: string
 }
@@ -31,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const { setLocale } = useI18n()
 
   useEffect(() => {
     console.log('AuthContext: useEffect triggered')
@@ -86,6 +90,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         console.log('AuthContext: Profile data:', data)
         setProfile(data)
+        if (data?.language && (supportedLocales as readonly string[]).includes(data.language)) {
+          setLocale(data.language as Locale)
+        }
       }
     } catch (error) {
       console.error('AuthContext: Error fetching user profile:', error)

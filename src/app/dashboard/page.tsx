@@ -3,10 +3,13 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { useI18n } from '@/contexts/I18nContext'
+import { t } from '@/i18n'
 
 export default function DashboardPage() {
   const { user, profile, loading, signOut } = useAuth()
   const router = useRouter()
+  const { locale } = useI18n()
 
   useEffect(() => {
     console.log('DashboardPage: useEffect triggered', { user, profile, loading })
@@ -25,10 +28,10 @@ export default function DashboardPage() {
   // Show loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-secondary-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600 dark:text-secondary-300">{t(locale, 'common_loading')}</p>
         </div>
       </div>
     )
@@ -75,24 +78,20 @@ export default function DashboardPage() {
                     />
                   </svg>
                 </div>
-                <h2 className="mt-4 text-2xl font-bold text-secondary-900 dark:text-secondary-100">
-                  Welcome to your dashboard!
-                </h2>
-                <p className="mt-2 text-secondary-600 dark:text-secondary-300">
-                  {getRoleDescription(profile.role)}
-                </p>
+                <h2 className="mt-4 text-2xl font-bold text-secondary-900 dark:text-secondary-100">{t(locale, 'dashboard_welcome')}</h2>
+                <p className="mt-2 text-secondary-600 dark:text-secondary-300">{
+                  profile.role === 'organizer' ? t(locale, 'role_organizer') : profile.role === 'participant' ? t(locale, 'role_participant') : t(locale, 'role_admin')
+                }</p>
               </div>
 
               {/* Role-specific content */}
               <div className="mt-8 border-t border-secondary-200 dark:border-secondary-700 pt-8">
-                <h3 className="text-lg font-medium text-secondary-900 dark:text-secondary-100 mb-4">
-                  Quick Actions
-                </h3>
+                <h3 className="text-lg font-medium text-secondary-900 dark:text-secondary-100 mb-4">{t(locale, 'dashboard_quick_actions')}</h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {profile.role === 'organizer' ? (
                     <>
                       <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg">
-                        <h4 className="font-medium text-indigo-900 dark:text-indigo-300">Create a Tour</h4>
+                        <h4 className="font-medium text-indigo-900 dark:text-indigo-300">{t(locale, 'action_create_tour')}</h4>
                         <p className="text-sm text-indigo-700 dark:text-indigo-300/80 mt-1">
                           Start organizing your next spiritual journey
                         </p>
@@ -100,11 +99,11 @@ export default function DashboardPage() {
                           onClick={() => router.push('/dashboard/organizer/tours/new')}
                           className="mt-2 text-sm text-indigo-600 hover:text-indigo-500 font-medium"
                         >
-                          Create Tour →
+                          {t(locale, 'action_create_tour')} →
                         </button>
                       </div>
                       <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                        <h4 className="font-medium text-green-900 dark:text-green-300">Manage Tours</h4>
+                        <h4 className="font-medium text-green-900 dark:text-green-300">{t(locale, 'action_manage_tours')}</h4>
                         <p className="text-sm text-green-700 dark:text-green-300/80 mt-1">
                           View and edit your existing tours
                         </p>
@@ -112,34 +111,30 @@ export default function DashboardPage() {
                           onClick={() => router.push('/dashboard/organizer/tours')}
                           className="mt-2 text-sm text-green-600 hover:text-green-500 font-medium"
                         >
-                          View Tours →
+                          {t(locale, 'action_manage_tours')} →
                         </button>
                       </div>
                     </>
                   ) : (
                     <>
                       <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                        <h4 className="font-medium text-blue-900 dark:text-blue-300">My Bookings</h4>
-                        <p className="text-sm text-blue-700 dark:text-blue-300/80 mt-1">
-                          View your upcoming and past journeys
-                        </p>
+                        <h4 className="font-medium text-blue-900 dark:text-blue-300">{t(locale, 'action_my_bookings')}</h4>
+                        <p className="text-sm text-blue-700 dark:text-blue-300/80 mt-1">{t(locale, 'dashboard_my_bookings_desc')}</p>
                         <button
                           onClick={() => router.push('/bookings')}
                           className="mt-2 text-sm text-blue-600 hover:text-blue-500 font-medium"
                         >
-                          Open →
+                          {t(locale, 'common_open')} →
                         </button>
                       </div>
                       <div className="bg-teal-50 dark:bg-teal-900/20 p-4 rounded-lg">
-                        <h4 className="font-medium text-teal-900 dark:text-teal-300">My Tours</h4>
-                        <p className="text-sm text-teal-700 dark:text-teal-300/80 mt-1">
-                          See tours you have booked
-                        </p>
+                        <h4 className="font-medium text-teal-900 dark:text-teal-300">{t(locale, 'action_my_tours')}</h4>
+                        <p className="text-sm text-teal-700 dark:text-teal-300/80 mt-1">{t(locale, 'dashboard_my_tours_desc')}</p>
                         <button
                           onClick={() => router.push('/tours')}
                           className="mt-2 text-sm text-teal-600 hover:text-teal-500 font-medium"
                         >
-                          Open →
+                          {t(locale, 'common_open')} →
                         </button>
                       </div>
                     </>

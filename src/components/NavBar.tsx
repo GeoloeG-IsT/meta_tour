@@ -4,9 +4,12 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import Avatar from '@/components/Avatar'
 import { useEffect, useRef, useState } from 'react'
+import { useI18n } from '@/contexts/I18nContext'
+import { t } from '@/i18n'
 
 export default function NavBar() {
   const { user, loading, signOut, profile } = useAuth()
+  const { locale } = useI18n()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null)
 
@@ -35,7 +38,7 @@ export default function NavBar() {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="text-xl font-semibold text-gray-900 dark:text-secondary-100">
-              SoulTrip
+              {t(locale, 'app_name')}
             </Link>
           </div>
           <div className="flex items-center space-x-6">
@@ -59,13 +62,13 @@ export default function NavBar() {
                     menuOpen ? 'opacity-100 scale-100' : 'pointer-events-none opacity-0 scale-95'
                   }`}
                 >
-                  <Link
+                <Link
                     href="/dashboard"
                     className="block px-4 py-2 text-sm text-gray-700 dark:text-secondary-100 hover:bg-gray-50 dark:hover:bg-secondary-700"
                     onClick={() => setMenuOpen(false)}
                     role="menuitem"
                   >
-                    Dashboard
+                    {t(locale, 'nav_dashboard')}
                   </Link>
                   <Link
                     href={`/profile`}
@@ -73,24 +76,24 @@ export default function NavBar() {
                     onClick={() => setMenuOpen(false)}
                     role="menuitem"
                   >
-                    Profile
+                    {t(locale, 'nav_profile')}
                   </Link>
                   <button
                     onClick={() => { setMenuOpen(false); void signOut() }}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-secondary-100 hover:bg-gray-50 dark:hover:bg-secondary-700"
                     role="menuitem"
                   >
-                    Sign Out
+                    {t(locale, 'sign_out') || 'Sign Out'}
                   </button>
                 </div>
               </div>
             ) : (
               <div className="flex items-center space-x-4">
                 <Link href={`/login?redirect=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/')}`} className="text-gray-700 dark:text-secondary-100 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-                  Sign In
+                  {t(locale, 'nav_sign_in')}
                 </Link>
                 <Link href="/signup" className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
-                  Sign Up
+                  {t(locale, 'nav_sign_up')}
                 </Link>
               </div>
             )}
