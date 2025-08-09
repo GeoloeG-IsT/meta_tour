@@ -144,22 +144,19 @@ export default function Home() {
         {/* Filters + Tours grid */}
         <div className="w-full max-w-7xl mx-auto">
           <TourFiltersBar
-            query={query}
-            setQuery={setQuery}
-            runInference={runInference}
-            isInferring={isInferring}
-            startDate={startDate}
-            endDate={endDate}
-            setStartDate={setStartDate}
-            setEndDate={setEndDate}
-            countries={countries}
-            setCountries={setCountries}
-            difficulty={difficulty}
-            setDifficulty={setDifficulty}
-            perPage={perPage}
-            setPerPage={setPerPage}
-            filtersOpen={filtersOpen}
-            setFiltersOpen={setFiltersOpen}
+            value={{ query, filters: { startDate, endDate, countries, difficulty, perPage } }}
+            onChange={(next) => {
+              if (next.query !== undefined) setQuery(next.query)
+              if (next.filters) {
+                if (next.filters.startDate !== undefined) setStartDate(next.filters.startDate)
+                if (next.filters.endDate !== undefined) setEndDate(next.filters.endDate)
+                if (next.filters.countries !== undefined) setCountries(next.filters.countries)
+                if (next.filters.difficulty !== undefined) setDifficulty(next.filters.difficulty)
+                if (next.filters.perPage !== undefined) setPerPage(next.filters.perPage)
+              }
+            }}
+            onSearch={() => runInference()}
+            isSearching={isInferring}
             onClear={() => { setQuery(''); setStartDate(''); setEndDate(''); setCountries([]); setDifficulty(''); setPerPage(9); }}
           />
 

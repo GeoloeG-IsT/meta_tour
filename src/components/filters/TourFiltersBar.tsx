@@ -1,54 +1,25 @@
 import { PER_PAGE_OPTIONS, DIFFICULTY_OPTIONS } from '@/constants/tours'
+import { useState } from 'react'
 
-interface TourFiltersBarProps {
-  // Search
-  query: string
-  setQuery: (v: string) => void
-  runInference: () => Promise<void> | void
-  isInferring: boolean
-
-  // Filters
+type Filters = {
   startDate: string
   endDate: string
-  setStartDate: (v: string) => void
-  setEndDate: (v: string) => void
   countries: string[]
-  setCountries: (v: string[]) => void
   difficulty: string
-  setDifficulty: (v: string) => void
-
-  // Per page
   perPage: number
-  setPerPage: (n: number) => void
+}
 
-  // Dropdown
-  filtersOpen: boolean
-  setFiltersOpen: (b: boolean) => void
-
-  // Clear
+interface TourFiltersBarProps {
+  value: { query: string; filters: Filters }
+  onChange: (next: Partial<{ query: string; filters: Partial<Filters> }>) => void
+  onSearch: () => Promise<void> | void
+  isSearching: boolean
   onClear: () => void
 }
 
-export default function TourFiltersBar(props: TourFiltersBarProps) {
-  const {
-    query,
-    setQuery,
-    runInference,
-    isInferring,
-    startDate,
-    endDate,
-    setStartDate,
-    setEndDate,
-    countries,
-    setCountries,
-    difficulty,
-    setDifficulty,
-    perPage,
-    setPerPage,
-    filtersOpen,
-    setFiltersOpen,
-    onClear,
-  } = props
+export default function TourFiltersBar({ value, onChange, onSearch, isSearching, onClear }: TourFiltersBarProps) {
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const { query, filters } = value
 
   return (
     <div className="card p-4 mb-6 sticky top-16 z-30">
@@ -58,19 +29,19 @@ export default function TourFiltersBar(props: TourFiltersBarProps) {
             className="form-input rounded-full"
             placeholder="Search tours with a prompt..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => onChange({ query: e.target.value })}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault()
-                void runInference()
+                void onSearch()
               }
             }}
             aria-label="Search"
           />
         </div>
         <div>
-          <button className="btn-primary" disabled={isInferring || !query.trim()} onClick={() => void runInference()}>
-            {isInferring ? 'Analyzing…' : 'Search'}
+          <button className="btn-primary" disabled={isSearching || !query.trim()} onClick={() => void onSearch()}>
+            {isSearching ? 'Analyzing…' : 'Search'}
           </button>
         </div>
         <div className="md:ml-auto">
@@ -99,7 +70,7 @@ export default function TourFiltersBar(props: TourFiltersBarProps) {
         <div id="filters-panel" className="mt-4 border-t pt-4 grid grid-cols-1 md:grid-cols-6 gap-4">
           <div>
             <label className="form-label">Per Page</label>
-            <select className="form-input" value={perPage} onChange={(e) => setPerPage(Number(e.target.value))} aria-label="Per page">
+            <select className="form-input" value={filters.perPage} onChange={(e) => onChange({ filters: { perPage: Number(e.target.value) } })} aria-label="Per page">
               {PER_PAGE_OPTIONS.map((n) => (
                 <option key={n} value={n}>{n}</option>
               ))}
@@ -107,24 +78,24 @@ export default function TourFiltersBar(props: TourFiltersBarProps) {
           </div>
           <div>
             <label className="form-label">Start After</label>
-            <input type="date" className="form-input" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            <input type="date" className="form-input" value={filters.startDate} onChange={(e) => onChange({ filters: { startDate: e.target.value } })} />
           </div>
           <div>
             <label className="form-label">End Before</label>
-            <input type="date" className="form-input" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            <input type="date" className="form-input" value={filters.endDate} onChange={(e) => onChange({ filters: { endDate: e.target.value } })} />
           </div>
           <div>
             <label className="form-label">Countries</label>
-            {countries.length === 0 ? (
+            {filters.countries.length === 0 ? (
               <div className="text-sm text-secondary-600">Use the search prompt to infer countries (e.g., &quot;in Asia&quot;)</div>
             ) : (
               <div className="mt-2 flex flex-wrap gap-2">
-                {countries.map((c) => (
+                {filters.countries.map((c) => (
                   <span key={c} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                     {c}
                     <button
                       className="ml-1 text-gray-500 hover:text-gray-700"
-                      onClick={() => setCountries(countries.filter((x) => x !== c))}
+                      onClick={() => onChange({ filters: { countries: filters.countries.filter((x) => x !== c) } })}
                       aria-label={`Remove ${c}`}
                     >
                       ×
@@ -136,7 +107,7 @@ export default function TourFiltersBar(props: TourFiltersBarProps) {
           </div>
           <div>
             <label className="form-label">Difficulty</label>
-            <select className="form-input" value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
+            <select className="form-input" value={filters.difficulty} onChange={(e) => onChange({ filters: { difficulty: e.target.value } })}>
               {DIFFICULTY_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
