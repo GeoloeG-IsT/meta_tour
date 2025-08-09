@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import TourFiltersBar from '@/components/filters/TourFiltersBar'
 import { fetchPublishedTours } from '@/data/tours'
+import { SORT_OPTIONS } from '@/constants/tours'
 import TourCard from '@/components/TourCard'
 import type { TourSummary } from '@/types/tour'
 
@@ -29,6 +30,7 @@ export default function Home() {
   const [bookedIds, setBookedIds] = useState<string[]>([])
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [isInferring, setIsInferring] = useState(false)
+  const [sort, setSort] = useState<string>('newest')
 
   // Load booked ids once per user
   useEffect(() => {
@@ -46,11 +48,13 @@ export default function Home() {
     void loadBooked()
   }, [user])
 
-  // Repository-backed fetch builder
-  const buildQuery = () => fetchPublishedTours(
-    { startDate, endDate, countries, difficulty },
-    undefined // range applied later
-  )
+  // Repository-backed fetch builder (range applied later)
+  const buildQuery = () => fetchPublishedTours({ startDate, endDate, countries, difficulty, sort: mapSort(sort) }, undefined)
+
+  function mapSort(value: string) {
+    const found = SORT_OPTIONS.find((o) => o.value === value)
+    return found ? { column: found.column, ascending: found.ascending } : { column: 'created_at', ascending: false }
+  }
 
   const loadPage = async (reset: boolean) => {
     try {
@@ -68,11 +72,11 @@ export default function Home() {
       console.log('[Tours] Fetch start', {
         when: new Date().toISOString(),
         reset,
-        filters: { startDate, endDate, difficulty, countries: countriesLower },
+        filters: { startDate, endDate, difficulty, countries: countriesLower, sort },
         pagination: { from, to, perPage, prevOffset: offset },
       })
       const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now()
-      const { data, error } = await fetchPublishedTours({ startDate, endDate, countries, difficulty }, { from, to })
+      const { data, error } = await fetchPublishedTours({ startDate, endDate, countries, difficulty, sort: mapSort(sort) }, { from, to })
       const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now()
       console.log('[Tours] Fetch end', {
         when: new Date().toISOString(),
@@ -110,7 +114,7 @@ export default function Home() {
   useEffect(() => {
     void loadPage(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate, endDate, countries, difficulty, perPage])
+  }, [startDate, endDate, countries, difficulty, perPage, sort])
 
   const runInference = async () => {
     if (!query.trim()) return
@@ -129,6 +133,8 @@ export default function Home() {
       if (Array.isArray(f.countries)) setCountries(f.countries)
       if (f.difficulty !== undefined) setDifficulty(f.difficulty || '')
       if (f.startDate || f.endDate || (Array.isArray(f.countries) && f.countries.length > 0) || f.difficulty) setFiltersOpen(true)
+      // Optional: auto-choose sort to soonest start date if dates are present
+      if (f.startDate || f.endDate) setSort('start_date_asc')
     } catch {
       // ignore
     } finally {
@@ -144,7 +150,7 @@ export default function Home() {
         {/* Filters + Tours grid */}
         <div className="w-full max-w-7xl mx-auto">
           <TourFiltersBar
-            value={{ query, filters: { startDate, endDate, countries, difficulty, perPage } }}
+            value={{ query, filters: { startDate, endDate, countries, difficulty, perPage, sort } }}
             onChange={(next) => {
               if (next.query !== undefined) setQuery(next.query)
               if (next.filters) {
@@ -153,6 +159,7 @@ export default function Home() {
                 if (next.filters.countries !== undefined) setCountries(next.filters.countries)
                 if (next.filters.difficulty !== undefined) setDifficulty(next.filters.difficulty)
                 if (next.filters.perPage !== undefined) setPerPage(next.filters.perPage)
+                if (next.filters.sort !== undefined) setSort(next.filters.sort)
               }
             }}
             onSearch={() => runInference()}

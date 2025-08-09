@@ -5,6 +5,7 @@ export type TourFilters = {
   endDate?: string
   countries?: string[]
   difficulty?: string
+  sort?: { column: string; ascending: boolean } | null
 }
 
 export type Range = { from: number; to: number }
@@ -17,12 +18,13 @@ export async function fetchPublishedTours(filters: TourFilters, range?: Range) {
        tour_images:tour_images!tour_images_tour_id_fkey ( image_url, alt_text )`
     )
     .eq('status', 'published')
-    .order('created_at', { ascending: false })
 
   if (filters.startDate) qb = qb.gte('start_date', filters.startDate)
   if (filters.endDate) qb = qb.lte('end_date', filters.endDate)
   if (filters.countries && filters.countries.length > 0) qb = qb.in('country', filters.countries.map((c) => c.toLowerCase()))
   if (filters.difficulty) qb = qb.eq('difficulty', filters.difficulty)
+  if (filters.sort) qb = qb.order(filters.sort.column as any, { ascending: filters.sort.ascending })
+  else qb = qb.order('created_at' as any, { ascending: false })
 
   const result = range ? await qb.range(range.from, range.to) : await qb
   return result

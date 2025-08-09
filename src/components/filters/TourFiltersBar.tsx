@@ -1,4 +1,4 @@
-import { PER_PAGE_OPTIONS, DIFFICULTY_OPTIONS } from '@/constants/tours'
+import { PER_PAGE_OPTIONS, DIFFICULTY_OPTIONS, SORT_OPTIONS } from '@/constants/tours'
 import { useState } from 'react'
 
 type Filters = {
@@ -7,6 +7,7 @@ type Filters = {
   countries: string[]
   difficulty: string
   perPage: number
+  sort: string
 }
 
 interface TourFiltersBarProps {
@@ -73,6 +74,14 @@ export default function TourFiltersBar({ value, onChange, onSearch, isSearching,
             <select className="form-input" value={filters.perPage} onChange={(e) => onChange({ filters: { perPage: Number(e.target.value) } })} aria-label="Per page">
               {PER_PAGE_OPTIONS.map((n) => (
                 <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="form-label">Sort</label>
+            <select className="form-input" value={filters.sort} onChange={(e) => onChange({ filters: { sort: e.target.value } })}>
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
           </div>
