@@ -53,14 +53,14 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white dark:bg-secondary-900">
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-white dark:bg-secondary-800 overflow-hidden shadow rounded-lg border border-secondary-200 dark:border-secondary-700">
             <div className="px-4 py-5 sm:p-6">
               <div className="text-center">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 dark:bg-indigo-900/40">
                   <svg
                     className="h-6 w-6 text-indigo-600"
                     fill="none"
@@ -75,25 +75,25 @@ export default function DashboardPage() {
                     />
                   </svg>
                 </div>
-                <h2 className="mt-4 text-2xl font-bold text-gray-900">
+                <h2 className="mt-4 text-2xl font-bold text-secondary-900 dark:text-secondary-100">
                   Welcome to your dashboard!
                 </h2>
-                <p className="mt-2 text-gray-600">
+                <p className="mt-2 text-secondary-600 dark:text-secondary-300">
                   {getRoleDescription(profile.role)}
                 </p>
               </div>
 
               {/* Role-specific content */}
-              <div className="mt-8 border-t border-gray-200 pt-8">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
+              <div className="mt-8 border-t border-secondary-200 dark:border-secondary-700 pt-8">
+                <h3 className="text-lg font-medium text-secondary-900 dark:text-secondary-100 mb-4">
                   Quick Actions
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {profile.role === 'organizer' ? (
                     <>
-                      <div className="bg-indigo-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-indigo-900">Create a Tour</h4>
-                        <p className="text-sm text-indigo-700 mt-1">
+                      <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg">
+                        <h4 className="font-medium text-indigo-900 dark:text-indigo-300">Create a Tour</h4>
+                        <p className="text-sm text-indigo-700 dark:text-indigo-300/80 mt-1">
                           Start organizing your next spiritual journey
                         </p>
                         <button
@@ -103,9 +103,9 @@ export default function DashboardPage() {
                           Create Tour →
                         </button>
                       </div>
-                      <div className="bg-green-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-green-900">Manage Tours</h4>
-                        <p className="text-sm text-green-700 mt-1">
+                      <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                        <h4 className="font-medium text-green-900 dark:text-green-300">Manage Tours</h4>
+                        <p className="text-sm text-green-700 dark:text-green-300/80 mt-1">
                           View and edit your existing tours
                         </p>
                         <button
@@ -118,9 +118,9 @@ export default function DashboardPage() {
                     </>
                   ) : (
                     <>
-                      <div className="bg-blue-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-blue-900">My Bookings</h4>
-                        <p className="text-sm text-blue-700 mt-1">
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                        <h4 className="font-medium text-blue-900 dark:text-blue-300">My Bookings</h4>
+                        <p className="text-sm text-blue-700 dark:text-blue-300/80 mt-1">
                           View your upcoming and past journeys
                         </p>
                         <button
@@ -130,9 +130,9 @@ export default function DashboardPage() {
                           Open →
                         </button>
                       </div>
-                      <div className="bg-teal-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-teal-900">My Tours</h4>
-                        <p className="text-sm text-teal-700 mt-1">
+                      <div className="bg-teal-50 dark:bg-teal-900/20 p-4 rounded-lg">
+                        <h4 className="font-medium text-teal-900 dark:text-teal-300">My Tours</h4>
+                        <p className="text-sm text-teal-700 dark:text-teal-300/80 mt-1">
                           See tours you have booked
                         </p>
                         <button

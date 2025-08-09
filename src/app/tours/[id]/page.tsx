@@ -265,7 +265,7 @@ export default function TourDetailsPage() {
   const heroImage = tour.tour_images?.[0]
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-white dark:bg-secondary-900">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <div className="relative h-64 w-full bg-secondary-200 rounded-md overflow-hidden">
           {heroImage ? (
