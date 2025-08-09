@@ -25,6 +25,7 @@ export default function Home() {
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [bookedIds, setBookedIds] = useState<string[]>([])
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   // Load booked ids once per user
   useEffect(() => {
@@ -126,19 +127,44 @@ export default function Home() {
         {/* Filters + Tours grid */}
         <div className="w-full max-w-7xl mx-auto">
           <div className="card p-4 mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-              <div>
-                <label className="form-label">Search</label>
-                <input className="form-input" placeholder="Search by title" value={query} onChange={(e) => setQuery(e.target.value)} />
+            {/* Top row: Search + Per Page + Filters toggle */}
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+              <div className="flex-1">
+                <input
+                  className="form-input rounded-full"
+                  placeholder="Search tours"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  aria-label="Search"
+                />
               </div>
-              <div>
-                <label className="form-label">Start After</label>
-                <input type="date" className="form-input" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-secondary-600">Per page</span>
+                <select className="form-input" value={perPage} onChange={(e) => setPerPage(Number(e.target.value))} aria-label="Per page">
+                  <option value={6}>6</option>
+                  <option value={9}>9</option>
+                  <option value={12}>12</option>
+                  <option value={18}>18</option>
+                </select>
               </div>
-              <div>
-                <label className="form-label">End Before</label>
-                <input type="date" className="form-input" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              <div className="md:ml-auto">
+                <button className="btn-secondary" onClick={() => setFiltersOpen((v) => !v)} aria-expanded={filtersOpen} aria-controls="filters-panel">
+                  {filtersOpen ? 'Hide Filters' : 'Filters'}
+                </button>
+              </div>
             </div>
+
+            {/* Dropdown filters */}
+            {filtersOpen && (
+              <div id="filters-panel" className="mt-4 border-t pt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="form-label">Start After</label>
+                  <input type="date" className="form-input" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                </div>
+                <div>
+                  <label className="form-label">End Before</label>
+                  <input type="date" className="form-input" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                </div>
                 <div>
                   <label className="form-label">Country</label>
                   <input className="form-input" placeholder="e.g., Nepal" value={country} onChange={(e) => setCountry(e.target.value)} />
@@ -153,19 +179,23 @@ export default function Home() {
                     <option value="intense">Intense</option>
                   </select>
                 </div>
-                <div>
-                  <label className="form-label">Per Page</label>
-                  <select className="form-input" value={perPage} onChange={(e) => setPerPage(Number(e.target.value))}>
-                    <option value={6}>6</option>
-                    <option value={9}>9</option>
-                    <option value={12}>12</option>
-                    <option value={18}>18</option>
-                  </select>
-            </div>
-                <div className="flex items-end">
-                  <button className="btn-secondary w-full" onClick={() => { setQuery(''); setStartDate(''); setEndDate(''); setCountry(''); setDifficulty(''); setPerPage(9); }}>Clear Filters</button>
-          </div>
-        </div>
+                <div className="md:col-span-4 flex justify-end">
+                  <button
+                    className="btn-secondary"
+                    onClick={() => {
+                      setQuery('');
+                      setStartDate('');
+                      setEndDate('');
+                      setCountry('');
+                      setDifficulty('');
+                      setPerPage(9);
+                    }}
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {toursLoading ? (
