@@ -143,7 +143,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white dark:bg-secondary-900">
 
       {/* Main Content */}
       <main className="min-h-screen px-4 sm:px-6 lg:px-8 py-8">
@@ -177,10 +177,10 @@ export default function Home() {
                     <div className="h-6 bg-secondary-300 rounded mb-2"></div>
                     <div className="h-4 bg-secondary-300 rounded mb-2"></div>
                     <div className="h-4 bg-secondary-300 rounded w-1/2"></div>
-                  </div>
-                </div>
+          </div>
+        </div>
               ))}
-            </div>
+          </div>
           ) : toursError ? (
             <div className="text-center text-secondary-600">{toursError}</div>
           ) : tours.length === 0 ? (

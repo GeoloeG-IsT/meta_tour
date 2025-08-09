@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Light/Dark basic background & text defaults */
+html,
+body {
+  @apply bg-white text-secondary-900 dark:bg-secondary-900 dark:text-secondary-100;
+}
+
+.card {
+  @apply bg-white dark:bg-secondary-800 border border-secondary-200 dark:border-secondary-700 rounded;
+}
+
+.form-label {
+  @apply block text-sm font-medium text-secondary-700 dark:text-secondary-200 mb-1;
+}
+
+.form-input {
+  @apply w-full rounded-md border border-secondary-300 dark:border-secondary-700 bg-white dark:bg-secondary-800 text-secondary-900 dark:text-secondary-100 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500;
+}
+
+.btn-primary {
+  @apply bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors;
+}
+
+.btn-secondary {
+  @apply bg-secondary-100 dark:bg-secondary-700 text-secondary-900 dark:text-secondary-100 hover:bg-secondary-200 dark:hover:bg-secondary-600 px-4 py-2 rounded-md text-sm font-medium transition-colors;
+}
+
 @layer base {
 
     /* Reset and base styles */

@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { useTheme } from '@/contexts/ThemeContext'
 
 export default function MyProfilePage() {
   const { user, loading, profile, reloadProfile } = useAuth()
+  const { theme, setTheme } = useTheme()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [bio, setBio] = useState('')
@@ -81,13 +83,14 @@ export default function MyProfilePage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-2xl font-bold text-secondary-900 mb-6">My Profile</h1>
+    <div className="min-h-screen bg-white dark:bg-secondary-900">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-2xl font-bold text-secondary-900 dark:text-secondary-100 mb-6">My Profile</h1>
 
-      {message && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">{message}</div>}
-      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
+        {message && <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-200 px-4 py-3 rounded mb-4">{message}</div>}
+        {error && <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-4">{error}</div>}
 
-      <form onSubmit={handleSave} className="space-y-6">
+        <form onSubmit={handleSave} className="space-y-6 card p-6">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-start">
           <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -146,14 +149,30 @@ export default function MyProfilePage() {
           <textarea className="form-input min-h-[120px]" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell others about yourself" />
         </div>
 
+        <div>
+          <label className="form-label">Theme</label>
+          <div className="grid grid-cols-3 gap-2 max-w-md">
+            {(['light','dark','system'] as const).map((mode) => (
+              <button
+                type="button"
+                key={mode}
+                onClick={() => setTheme(mode)}
+                className={`px-3 py-2 rounded border text-sm ${theme === mode ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-secondary-800 dark:text-secondary-100 border-secondary-200'}`}
+              >
+                {mode.replace(/^./, (c) => c.toUpperCase())}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="flex justify-end gap-3">
           <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</button>
         </div>
-      </form>
+        </form>
 
-      <div className="mt-10">
-        <h2 className="text-xl font-semibold text-secondary-900 mb-4">Change Password</h2>
-        <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
+        <div className="mt-10 card p-6">
+          <h2 className="text-xl font-semibold text-secondary-900 dark:text-secondary-100 mb-4">Change Password</h2>
+          <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
           <div>
             <label className="form-label">New Password</label>
             <input type="password" className="form-input" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
@@ -163,7 +182,8 @@ export default function MyProfilePage() {
             <input type="password" className="form-input" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
           </div>
           <button type="submit" className="btn-secondary" disabled={changingPassword}>{changingPassword ? 'Updating...' : 'Update Password'}</button>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   )
