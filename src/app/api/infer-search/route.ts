@@ -17,9 +17,9 @@ function simpleInfer(query: string): Filters {
   else if (/\b(challenging|hard|difficult|tough)\b/.test(q)) filters.difficulty = 'challenging'
   else if (/\b(intense|extreme)\b/.test(q)) filters.difficulty = 'intense'
 
-  // Date detection: ISO-like dates
+  // Date detection: ISO-like dates (avoid matchAll for older targets)
   const dateRegex = /(\d{4}-\d{2}-\d{2})/g
-  const dates = [...q.matchAll(dateRegex)].map((m) => m[1])
+  const dates = (q.match(dateRegex) || []) as string[]
   if (dates.length > 0) filters.startDate = dates[0]
   if (dates.length > 1) filters.endDate = dates[1]
 
