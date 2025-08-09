@@ -232,7 +232,7 @@ export default function TourDetailsPage() {
               <span className="text-secondary-500">•</span>
               <span className="text-secondary-600">{t(locale, 'tour_by')}</span>
               <Link href={`/profile/${tour.organizer_id}`} className="text-indigo-600 hover:text-indigo-500">
-                {tour.organizer_name || 'Organizer profile'}
+                {tour.organizer_name || t(locale, 'view_profile')}
               </Link>
             </div>
             <p className="text-secondary-600 mt-2">

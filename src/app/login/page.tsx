@@ -46,7 +46,7 @@ function LoginContent() {
     setIsLoading(true)
 
     if (!email || !password) {
-      setError('Please fill in all fields')
+      setError(t(locale, 'login_fill_all'))
       setIsLoading(false)
       return
     }
@@ -61,7 +61,7 @@ function LoginContent() {
         router.push(redirectTo)
       }
     } catch (err) {
-      setError('An unexpected error occurred')
+      setError(t(locale, 'login_unexpected'))
     } finally {
       setIsLoading(false)
     }

@@ -92,7 +92,7 @@ export default function ViewBookingPage() {
         window.location.href = url
       }
     } catch (e) {
-      setError('Could not start payment. Please try again later.')
+      setError(t(locale, 'booking_payment_start_failed') || 'Could not start payment. Please try again later.')
     } finally {
       setIsCreatingCheckout(false)
     }

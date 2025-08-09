@@ -26,7 +26,7 @@ export default function SignUpPage() {
     setIsLoading(true)
 
     if (!email || !password || !fullName) {
-      setError('Please fill in all fields')
+      setError(t(locale, 'signup_fill_all'))
       setIsLoading(false)
       return
     }
@@ -47,7 +47,7 @@ export default function SignUpPage() {
         router.push(`/auth/confirm?email=${encodeURIComponent(email)}`)
       }
     } catch (err) {
-      setError('An unexpected error occurred')
+      setError(t(locale, 'signup_unexpected'))
     } finally {
       setIsLoading(false)
     }

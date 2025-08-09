@@ -66,7 +66,7 @@ export default function MyProfilePage() {
       setMessage(t(locale, 'profile_updated'))
       clearTimeout(safetyTimer)
     } catch (e: any) {
-      setError(e?.message || 'Failed to save')
+      setError(e?.message || t(locale, 'profile_save_failed'))
     } finally {
       setSaving(false)
     }
@@ -92,7 +92,7 @@ export default function MyProfilePage() {
       setConfirmPassword('')
       setMessage(t(locale, 'profile_password_updated'))
     } catch (e: any) {
-      setError(e?.message || 'Failed to update password')
+      setError(e?.message || t(locale, 'profile_password_update_failed'))
     } finally {
       setChangingPassword(false)
     }

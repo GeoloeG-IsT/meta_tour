@@ -92,6 +92,8 @@ const en: Dictionary = {
   profile_update_password: 'Update Password',
   profile_updated: 'Profile updated',
   profile_password_updated: 'Password updated',
+  profile_save_failed: 'Failed to save',
+  profile_password_update_failed: 'Failed to update password',
   // tour card/details
   tour_available: 'Available',
   tour_sold_out: 'Sold out',
@@ -138,6 +140,7 @@ const en: Dictionary = {
   booking_for: 'For:',
   booking_status: 'Status',
   booking_payment: 'Payment',
+  booking_payment_start_failed: 'Could not start payment. Please try again later.',
   booking_start: 'Start',
   booking_end: 'End',
   booking_amount: 'Amount',
@@ -221,6 +224,9 @@ const en: Dictionary = {
   iu_select_at_least_one: 'Please select at least one image to upload',
   iu_uploading: 'Uploading...',
   iu_upload_cta: 'Upload',
+  iu_selected_images: 'Selected Images ({count}/10)',
+  iu_limit: 'You can only upload up to {max} images per tour',
+  iu_unexpected: 'An unexpected error occurred during upload',
   participants_loading: 'Loading participants…',
 }
 
@@ -428,6 +434,9 @@ const fr: Dictionary = {
   iu_select_at_least_one: 'Veuillez sélectionner au moins une image à téléverser',
   iu_uploading: 'Téléversement...',
   iu_upload_cta: 'Téléverser',
+  iu_selected_images: 'Images sélectionnées ({count}/10)',
+  iu_limit: 'Vous pouvez téléverser jusqu’à {max} images par voyage',
+  iu_unexpected: 'Une erreur inattendue est survenue lors du téléversement',
 }
 
 const de: Dictionary = {
@@ -634,6 +643,9 @@ const de: Dictionary = {
   iu_select_at_least_one: 'Bitte mindestens ein Bild zum Hochladen auswählen',
   iu_uploading: 'Wird hochgeladen...',
   iu_upload_cta: 'Hochladen',
+  iu_selected_images: 'Ausgewählte Bilder ({count}/10)',
+  iu_limit: 'Sie können bis zu {max} Bilder pro Tour hochladen',
+  iu_unexpected: 'Beim Hochladen ist ein unerwarteter Fehler aufgetreten',
 }
 
 const uk: Dictionary = {
@@ -840,6 +852,9 @@ const uk: Dictionary = {
   iu_select_at_least_one: 'Будь ласка, виберіть принаймні одне зображення для завантаження',
   iu_uploading: 'Завантаження...',
   iu_upload_cta: 'Завантажити',
+  iu_selected_images: 'Вибрані зображення ({count}/10)',
+  iu_limit: 'Ви можете завантажити до {max} зображень на тур',
+  iu_unexpected: 'Під час завантаження сталася неочікувана помилка',
 }
 
 const ru: Dictionary = {
@@ -1046,6 +1061,9 @@ const ru: Dictionary = {
   iu_select_at_least_one: 'Выберите минимум одно изображение для загрузки',
   iu_uploading: 'Загрузка...',
   iu_upload_cta: 'Загрузить',
+  iu_selected_images: 'Выбранные изображения ({count}/10)',
+  iu_limit: 'Вы можете загрузить до {max} изображений на тур',
+  iu_unexpected: 'Во время загрузки произошла непредвиденная ошибка',
 }
 
 const es: Dictionary = {
@@ -1252,6 +1270,9 @@ const es: Dictionary = {
   iu_select_at_least_one: 'Selecciona al menos una imagen para subir',
   iu_uploading: 'Subiendo...',
   iu_upload_cta: 'Subir',
+  iu_selected_images: 'Imágenes seleccionadas ({count}/10)',
+  iu_limit: 'Puedes subir hasta {max} imágenes por tour',
+  iu_unexpected: 'Ocurrió un error inesperado durante la carga',
 }
 
 const it: Dictionary = {
@@ -1458,6 +1479,9 @@ const it: Dictionary = {
   iu_select_at_least_one: 'Seleziona almeno un’immagine da caricare',
   iu_uploading: 'Caricamento...',
   iu_upload_cta: 'Carica',
+  iu_selected_images: 'Immagini selezionate ({count}/10)',
+  iu_limit: 'Puoi caricare fino a {max} immagini per tour',
+  iu_unexpected: 'Si è verificato un errore imprevisto durante il caricamento',
 }
 
 const dictionaries: Record<Locale, Dictionary> = { en, fr, de, uk, ru, es, it }

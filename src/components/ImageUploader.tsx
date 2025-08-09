@@ -34,7 +34,7 @@ export default function ImageUploader({ tourId, onUploadComplete }: ImageUploade
     const maxFiles = 10 // Limit number of files
 
     if (selectedImages.length + files.length > maxFiles) {
-      setError(`You can only upload up to ${maxFiles} images per tour`)
+      setError(t(locale, 'iu_limit').replace('{max}', String(maxFiles)))
       return
     }
 
@@ -157,7 +157,7 @@ export default function ImageUploader({ tourId, onUploadComplete }: ImageUploade
 
     } catch (error) {
       console.error('Upload error:', error)
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred during upload')
+      setError(error instanceof Error ? error.message : t(locale, 'iu_unexpected') )
     } finally {
       setIsUploading(false)
       setUploadProgress({})
@@ -220,7 +220,7 @@ export default function ImageUploader({ tourId, onUploadComplete }: ImageUploade
       {/* Image Previews */}
       {selectedImages.length > 0 && (
         <div className="space-y-4">
-          <h4 className="text-sm font-medium text-gray-700">Selected Images ({selectedImages.length}/10)</h4>
+          <h4 className="text-sm font-medium text-gray-700">{t(locale, 'iu_selected_images',).replace('{count}', String(selectedImages.length))}</h4>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
             {selectedImages.map((imagePreview) => {
               const progress = uploadProgress[imagePreview.id] || 0
